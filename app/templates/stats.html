@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Stats - {{ link.short_code }}{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Link Statistics</h1>
+    <p class="subtitle">Tracking data for your shortened link.</p>
+</div>
+
+<div class="card stats-card">
+    <div class="stat-row">
+        <span class="stat-label">Short URL</span>
+        <a href="{{ short_url }}" target="_blank" class="stat-value link">{{ short_url }}</a>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Original URL</span>
+        <a href="{{ link.original_url }}" target="_blank" class="stat-value link original-url">{{ link.original_url }}</a>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span class="stat-number">{{ link.clicks }}</span>
+            <span class="stat-desc">Total Clicks</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ link.created_at.strftime('%b %d, %Y') }}</span>
+            <span class="stat-desc">Created</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ link.last_clicked.strftime('%b %d, %Y %H:%M') if link.last_clicked else 'Never' }}</span>
+            <span class="stat-desc">Last Clicked</span>
+        </div>
+    </div>
+    <a href="/" class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;text-decoration:none;">Shorten Another URL</a>
+</div>
+{% endblock %}
