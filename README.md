@@ -121,30 +121,30 @@ GET /{code}  ->  307 redirect to original URL
 
 ```
 url-shortener/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application entry point
-│   ├── config.py            # Settings and configuration
-│   ├── database.py          # Async engine and session
-│   ├── models.py            # SQLAlchemy URL model
-│   ├── schemas.py           # Pydantic schemas
-│   ├── utils.py             # Short code generation
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── api.py           # REST API endpoints
-│   │   └── pages.py         # Web UI routes
-│   ├── templates/
-│   │   ├── base.html        # Base layout
-│   │   ├── index.html       # Main page (shorten form)
-│   │   └── stats.html       # Link statistics page
-│   └── static/
-│       ├── css/style.css    # Dark theme styles
-│       └── js/main.js       # Frontend logic
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── .gitignore
-└── README.md
+|-- app/
+|   |-- __init__.py
+|   |-- main.py              # FastAPI application entry point
+|   |-- config.py            # Settings and configuration
+|   |-- database.py          # Async engine and session
+|   |-- models.py            # SQLAlchemy URL model
+|   |-- schemas.py           # Pydantic schemas
+|   |-- utils.py             # Short code generation
+|   |-- routers/
+|   |   |-- __init__.py
+|   |   |-- api.py           # REST API endpoints
+|   |   `-- pages.py         # Web UI routes
+|   |-- templates/
+|   |   |-- base.html        # Base layout
+|   |   |-- index.html       # Main page (shorten form)
+|   |   `-- stats.html       # Link statistics page
+|   `-- static/
+|       |-- css/style.css    # Dark theme styles
+|       `-- js/main.js       # Frontend logic
+|-- Dockerfile
+|-- docker-compose.yml
+|-- requirements.txt
+|-- .gitignore
+`-- README.md
 ```
 
 ## Tech Stack
@@ -169,6 +169,6 @@ MIT
   <sub>developed by <a href="https://github.com/qorexdevs">qorex</a></sub>
   <br>
   <sub>
-    <a href="https://github.com/qorexdevs">GitHub</a> · <a href="https://t.me/qorexdev">Telegram</a>
+    <a href="https://github.com/qorexdevs">GitHub</a> | <a href="https://t.me/qorexdev">Telegram</a>
   </sub>
 </p>
