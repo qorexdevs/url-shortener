@@ -46,6 +46,14 @@ async def test_shorten_invalid_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_empty_alias(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "custom_alias": ""}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_redirect(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]

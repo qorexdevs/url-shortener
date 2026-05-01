@@ -22,7 +22,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
     code = None
 
-    if data.custom_alias:
+    if data.custom_alias is not None:
         if not validate_alias(data.custom_alias):
             raise HTTPException(
                 status_code=400,
