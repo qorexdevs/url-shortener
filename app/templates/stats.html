@@ -17,6 +17,16 @@
         <span class="stat-label">Original URL</span>
         <a href="{{ link.original_url }}" target="_blank" class="stat-value link original-url">{{ link.original_url }}</a>
     </div>
+    <div class="stat-row">
+        <span class="stat-label">Expiration</span>
+        <span class="stat-value">
+            {% if link.expires_at %}
+                {{ link.expires_at.strftime('%b %d, %Y %H:%M') }}{% if expired %} (expired){% endif %}
+            {% else %}
+                Never
+            {% endif %}
+        </span>
+    </div>
     <div class="stats-grid">
         <div class="stat-box">
             <span class="stat-number">{{ link.clicks }}</span>

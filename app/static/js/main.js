@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const urlInput = document.getElementById("url");
   const aliasInput = document.getElementById("alias");
+  const ttlInput = document.getElementById("ttl");
   const submitBtn = document.getElementById("submit-btn");
   const resultDiv = document.getElementById("result");
   const errorDiv = document.getElementById("error-msg");
@@ -21,6 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = { url: urlInput.value.trim() };
     const alias = aliasInput.value.trim();
     if (alias) payload.custom_alias = alias;
+    const ttl = Number.parseInt(ttlInput.value, 10);
+    if (ttl > 0) payload.ttl_hours = ttl;
 
     try {
       const res = await fetch("/api/shorten", {

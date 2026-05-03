@@ -179,3 +179,24 @@ async def test_no_ttl_means_no_expiration(client):
     stats = await client.get(f"/api/stats/{code}")
     assert stats.json()["expires_at"] is None
     assert stats.json()["expired"] is False
+
+
+@pytest.mark.asyncio
+async def test_home_page_has_ttl_field(client):
+    res = await client.get("/")
+    assert res.status_code == 200
+    assert 'id="ttl"' in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_shows_expiration(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
+    )
+    code = res.json()["short_code"]
+
+    res = await client.get(f"/stats/{code}")
+    assert res.status_code == 200
+    assert "Expiration" in res.text
+    expiration = res.text[res.text.index("Expiration"):res.text.index("Total Clicks")]
+    assert "Never" not in expiration
