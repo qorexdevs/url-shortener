@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
 class ShortenRequest(BaseModel):
     url: str
-    custom_alias: Optional[str] = None
-    ttl_hours: Optional[int] = None
+    custom_alias: str | None = None
+    ttl_hours: int | None = None
 
 class ShortenResponse(BaseModel):
     original_url: str
@@ -19,6 +18,6 @@ class LinkStats(BaseModel):
     short_code: str
     clicks: int
     created_at: datetime
-    last_clicked: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    last_clicked: datetime | None = None
+    expires_at: datetime | None = None
     expired: bool = False
