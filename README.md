@@ -65,7 +65,8 @@ Content-Type: application/json
 ```json
 {
   "url": "https://example.com/very/long/url",
-  "custom_alias": "my-link"
+  "custom_alias": "my-link",
+  "ttl_hours": 24
 }
 ```
 
@@ -92,7 +93,9 @@ GET /api/stats/{code}
   "short_code": "my-link",
   "clicks": 42,
   "created_at": "2025-01-01T00:00:00",
-  "last_clicked": "2025-01-02T12:30:00"
+  "last_clicked": "2025-01-02T12:30:00",
+  "expires_at": "2025-01-02T00:00:00",
+  "expired": false
 }
 ```
 

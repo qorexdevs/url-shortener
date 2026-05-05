@@ -46,8 +46,11 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         if not code:
             raise HTTPException(status_code=500, detail="Failed to generate unique code")
 
+    if data.ttl_hours is not None and data.ttl_hours <= 0:
+        raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
+
     expires_at = None
-    if data.ttl_hours and data.ttl_hours > 0:
+    if data.ttl_hours is not None:
         expires_at = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
 
     link = Link(

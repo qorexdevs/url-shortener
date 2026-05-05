@@ -127,6 +127,22 @@ async def test_shorten_with_ttl(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_rejects_zero_ttl(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 0}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_shorten_rejects_negative_ttl(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": -1}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_expired_link_returns_410(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
