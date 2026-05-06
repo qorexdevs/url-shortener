@@ -158,6 +158,26 @@ async def test_expired_link_returns_410(client):
 
 
 @pytest.mark.asyncio
+async def test_link_expires_at_boundary(client):
+    base = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    expires_at = base + timedelta(hours=1)
+
+    with patch("app.routers.api.datetime") as mock_dt:
+        mock_dt.now.return_value = base
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.post(
+            "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+        )
+    code = res.json()["short_code"]
+
+    with patch("app.routers.api.datetime") as mock_dt:
+        mock_dt.now.return_value = expires_at
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.get(f"/{code}", follow_redirects=False)
+        assert res.status_code == 410
+
+
+@pytest.mark.asyncio
 async def test_stats_shows_expired(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
@@ -231,3 +251,24 @@ async def test_stats_page_shows_expiration(client):
     assert "Expiration" in res.text
     expiration = res.text[res.text.index("Expiration"):res.text.index("Total Clicks")]
     assert "Never" not in expiration
+
+
+@pytest.mark.asyncio
+async def test_stats_page_shows_expired_at_boundary(client):
+    base = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    expires_at = base + timedelta(hours=1)
+
+    with patch("app.routers.api.datetime") as mock_dt:
+        mock_dt.now.return_value = base
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.post(
+            "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+        )
+    code = res.json()["short_code"]
+
+    with patch("app.routers.pages.datetime") as mock_dt:
+        mock_dt.now.return_value = expires_at
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.get(f"/stats/{code}")
+        assert res.status_code == 200
+        assert "(expired)" in res.text

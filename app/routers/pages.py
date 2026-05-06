@@ -26,7 +26,7 @@ async def stats_page(request: Request, code: str, session: AsyncSession = Depend
         raise HTTPException(status_code=404, detail="Link not found")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    expired = link.expires_at is not None and link.expires_at < now
+    expired = link.expires_at is not None and link.expires_at <= now
 
     return templates.TemplateResponse(
         request,

@@ -78,7 +78,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Link not found")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    expired = link.expires_at is not None and link.expires_at < now
+    expired = link.expires_at is not None and link.expires_at <= now
 
     return LinkStats(
         original_url=link.original_url,
@@ -101,7 +101,7 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Link not found")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if link.expires_at and link.expires_at < now:
+    if link.expires_at and link.expires_at <= now:
         raise HTTPException(status_code=410, detail="Link has expired")
 
     short_url = f"{BASE_URL}/{link.short_code}"
@@ -121,7 +121,7 @@ async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session
         raise HTTPException(status_code=404, detail="Link not found")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if link.expires_at and link.expires_at < now:
+    if link.expires_at and link.expires_at <= now:
         raise HTTPException(status_code=410, detail="Link has expired")
 
     link.clicks += 1
