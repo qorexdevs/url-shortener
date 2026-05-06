@@ -100,6 +100,10 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if link.expires_at and link.expires_at < now:
+        raise HTTPException(status_code=410, detail="Link has expired")
+
     short_url = f"{BASE_URL}/{link.short_code}"
     img = qrcode.make(short_url)
     buf = BytesIO()

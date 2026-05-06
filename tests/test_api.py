@@ -183,6 +183,21 @@ async def test_qr_code(client):
 
 
 @pytest.mark.asyncio
+async def test_expired_qr_code_returns_410(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+    )
+    code = res.json()["short_code"]
+
+    future = datetime.now(timezone.utc) + timedelta(hours=2)
+    with patch("app.routers.api.datetime") as mock_dt:
+        mock_dt.now.return_value = future
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.get(f"/api/qr/{code}")
+        assert res.status_code == 410
+
+
+@pytest.mark.asyncio
 async def test_qr_code_not_found(client):
     res = await client.get("/api/qr/nope")
     assert res.status_code == 404
