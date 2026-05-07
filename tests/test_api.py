@@ -24,6 +24,14 @@ async def test_shorten_with_custom_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_skips_reserved_generated_code(client):
+    with patch("app.routers.api.generate_short_code", side_effect=["static", "abc123"]):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 200
+    assert res.json()["short_code"] == "abc123"
+
+
+@pytest.mark.asyncio
 async def test_shorten_duplicate_alias(client):
     payload = {"url": "https://example.com", "custom_alias": "taken"}
     await client.post("/api/shorten", json=payload)

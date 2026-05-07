@@ -11,7 +11,7 @@ from app.config import BASE_URL
 from app.database import get_session
 from app.models import Link
 from app.schemas import LinkStats, ShortenRequest, ShortenResponse
-from app.utils import generate_short_code, validate_alias, validate_url
+from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, validate_url
 
 router = APIRouter()
 
@@ -39,6 +39,8 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
     else:
         for _ in range(10):
             candidate = generate_short_code()
+            if candidate.lower() in RESERVED_ALIASES:
+                continue
             existing = await session.execute(select(Link).where(Link.short_code == candidate))
             if not existing.scalar_one_or_none():
                 code = candidate
