@@ -55,6 +55,8 @@ def test_validate_alias_reserved_path():
     assert validate_alias("api") is False
     assert validate_alias("static") is False
     assert validate_alias("Stats") is False
+    assert validate_alias("docs") is False
+    assert validate_alias("Redoc") is False
 
 
 def test_validate_alias_none():

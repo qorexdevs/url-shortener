@@ -6,7 +6,7 @@ import validators
 
 from app.config import SHORT_CODE_LENGTH
 
-RESERVED_ALIASES = {"api", "static", "stats"}
+RESERVED_ALIASES = {"api", "static", "stats", "docs", "redoc"}
 
 def generate_short_code(length: int = SHORT_CODE_LENGTH) -> str:
     chars = string.ascii_letters + string.digits
