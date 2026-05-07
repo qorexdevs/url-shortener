@@ -51,5 +51,11 @@ def test_validate_alias_bad_chars():
     assert validate_alias("слово") is False
 
 
+def test_validate_alias_reserved_path():
+    assert validate_alias("api") is False
+    assert validate_alias("static") is False
+    assert validate_alias("Stats") is False
+
+
 def test_validate_alias_none():
     assert validate_alias(None) is False

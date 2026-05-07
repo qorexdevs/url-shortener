@@ -22,6 +22,7 @@
 - REST API for programmatic access
 - QR code generation for any link
 - Link expiration via `ttl_hours`
+- Reserved aliases block route collisions
 - Async SQLite (aiosqlite)
 
 ## Quick Start
