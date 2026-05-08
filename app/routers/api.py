@@ -15,7 +15,7 @@ from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, val
 
 router = APIRouter()
 
-@router.post("/api/shorten", response_model=ShortenResponse)
+@router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
 async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_session)):
     if not validate_url(data.url):
         raise HTTPException(status_code=400, detail="Invalid URL")

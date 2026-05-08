@@ -10,7 +10,7 @@ from conftest import test_session as db_session_factory
 @pytest.mark.asyncio
 async def test_shorten_url(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
-    assert res.status_code == 200
+    assert res.status_code == 201
     data = res.json()
     assert data["original_url"] == "https://example.com"
     assert "short_url" in data
@@ -22,7 +22,7 @@ async def test_shorten_with_custom_alias(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "mylink"}
     )
-    assert res.status_code == 200
+    assert res.status_code == 201
     assert res.json()["short_code"] == "mylink"
 
 
@@ -30,7 +30,7 @@ async def test_shorten_with_custom_alias(client):
 async def test_shorten_skips_reserved_generated_code(client):
     with patch("app.routers.api.generate_short_code", side_effect=["static", "abc123"]):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})
-    assert res.status_code == 200
+    assert res.status_code == 201
     assert res.json()["short_code"] == "abc123"
 
 
@@ -38,7 +38,7 @@ async def test_shorten_skips_reserved_generated_code(client):
 async def test_shorten_skips_docs_generated_code(client):
     with patch("app.routers.api.generate_short_code", side_effect=["docs", "abc123"]):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})
-    assert res.status_code == 200
+    assert res.status_code == 201
     assert res.json()["short_code"] == "abc123"
 
 
@@ -57,7 +57,7 @@ async def test_shorten_skips_generated_code_taken_by_custom_alias(client):
     with patch("app.routers.api.generate_short_code", side_effect=["abc123", "def456"]):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})
 
-    assert res.status_code == 200
+    assert res.status_code == 201
     assert res.json()["short_code"] == "def456"
 
 
@@ -174,7 +174,7 @@ async def test_shorten_with_ttl(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
     )
-    assert res.status_code == 200
+    assert res.status_code == 201
     code = res.json()["short_code"]
 
     stats = await client.get(f"/api/stats/{code}")
