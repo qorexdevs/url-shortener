@@ -138,6 +138,16 @@ async def test_custom_alias_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_stats_short_url_uses_custom_alias(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-link"}
+    )
+    res = await client.get("/api/stats/gh-link")
+    assert res.status_code == 200
+    assert res.json()["short_url"].endswith("/gh-link")
+
+
+@pytest.mark.asyncio
 async def test_shorten_with_ttl(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
@@ -297,3 +307,13 @@ async def test_stats_page_shows_expired_at_boundary(client):
         res = await client.get(f"/stats/{code}")
         assert res.status_code == 200
         assert "(expired)" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_short_url_uses_custom_alias(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-link"}
+    )
+    res = await client.get("/stats/gh-link")
+    assert res.status_code == 200
+    assert "/gh-link" in res.text

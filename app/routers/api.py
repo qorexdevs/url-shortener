@@ -81,10 +81,11 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     expired = link.expires_at is not None and link.expires_at <= now
+    short_path = link.custom_alias or link.short_code
 
     return LinkStats(
         original_url=link.original_url,
-        short_url=f"{BASE_URL}/{link.short_code}",
+        short_url=f"{BASE_URL}/{short_path}",
         short_code=link.short_code,
         clicks=link.clicks,
         created_at=link.created_at,
@@ -106,7 +107,8 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
     if link.expires_at and link.expires_at <= now:
         raise HTTPException(status_code=410, detail="Link has expired")
 
-    short_url = f"{BASE_URL}/{link.short_code}"
+    short_path = link.custom_alias or link.short_code
+    short_url = f"{BASE_URL}/{short_path}"
     img = qrcode.make(short_url)
     buf = BytesIO()
     img.save(buf, format="PNG")

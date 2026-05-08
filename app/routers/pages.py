@@ -27,13 +27,14 @@ async def stats_page(request: Request, code: str, session: AsyncSession = Depend
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     expired = link.expires_at is not None and link.expires_at <= now
+    short_path = link.custom_alias or link.short_code
 
     return templates.TemplateResponse(
         request,
         "stats.html",
         {
             "link": link,
-            "short_url": f"{BASE_URL}/{link.short_code}",
+            "short_url": f"{BASE_URL}/{short_path}",
             "base_url": BASE_URL,
             "expired": expired,
         },
