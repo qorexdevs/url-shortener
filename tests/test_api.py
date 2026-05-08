@@ -148,6 +148,18 @@ async def test_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_redirect_short_code_lookup_case_insensitive(client):
+    with patch("app.routers.api.generate_short_code", return_value="AbC123"):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+    assert res.json()["short_code"] == "AbC123"
+
+    res = await client.get("/abc123", follow_redirects=False)
+    assert res.status_code == 307
+    assert res.headers["location"] == "https://example.com"
+
+
+@pytest.mark.asyncio
 async def test_redirect_not_found(client):
     res = await client.get("/nonexistent", follow_redirects=False)
     assert res.status_code == 404
@@ -167,6 +179,17 @@ async def test_stats(client):
     assert data["clicks"] == 1
     assert data["original_url"] == "https://example.com"
     assert data["last_clicked"] is not None
+
+
+@pytest.mark.asyncio
+async def test_stats_short_code_lookup_case_insensitive(client):
+    with patch("app.routers.api.generate_short_code", return_value="AbC123"):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+
+    res = await client.get("/api/stats/abc123")
+    assert res.status_code == 200
+    assert res.json()["short_url"].endswith("/AbC123")
 
 
 @pytest.mark.asyncio
@@ -323,6 +346,17 @@ async def test_qr_code_lookup_case_insensitive(client):
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "Qr-Link"}
     )
     res = await client.get("/api/qr/qr-link")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_qr_short_code_lookup_case_insensitive(client):
+    with patch("app.routers.api.generate_short_code", return_value="AbC123"):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+
+    res = await client.get("/api/qr/abc123")
     assert res.status_code == 200
     assert res.headers["content-type"] == "image/png"
 
