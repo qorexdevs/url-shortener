@@ -1,4 +1,4 @@
-from app.utils import generate_short_code, validate_alias, validate_url
+﻿from app.utils import generate_short_code, validate_alias, validate_url
 
 
 def test_generate_short_code_default_length():
@@ -48,7 +48,7 @@ def test_validate_alias_too_long():
 def test_validate_alias_bad_chars():
     assert validate_alias("has spaces") is False
     assert validate_alias("no!special") is False
-    assert validate_alias("слово") is False
+    assert validate_alias("\u0441\u043b\u043e\u0432\u043e") is False
 
 
 def test_validate_alias_reserved_path():
@@ -61,3 +61,4 @@ def test_validate_alias_reserved_path():
 
 def test_validate_alias_none():
     assert validate_alias(None) is False
+
