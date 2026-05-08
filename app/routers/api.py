@@ -41,7 +41,11 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
             candidate = generate_short_code()
             if candidate.lower() in RESERVED_ALIASES:
                 continue
-            existing = await session.execute(select(Link).where(Link.short_code == candidate))
+            existing = await session.execute(
+                select(Link).where(
+                    (Link.short_code == candidate) | (Link.custom_alias == candidate)
+                )
+            )
             if not existing.scalar_one_or_none():
                 code = candidate
                 break

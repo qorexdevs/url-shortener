@@ -3,6 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
+from app.models import Link
+from conftest import test_session as db_session_factory
+
 
 @pytest.mark.asyncio
 async def test_shorten_url(client):
@@ -37,6 +40,25 @@ async def test_shorten_skips_docs_generated_code(client):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})
     assert res.status_code == 200
     assert res.json()["short_code"] == "abc123"
+
+
+@pytest.mark.asyncio
+async def test_shorten_skips_generated_code_taken_by_custom_alias(client):
+    async with db_session_factory() as session:
+        session.add(
+            Link(
+                original_url="https://legacy.example.com",
+                short_code="legacy01",
+                custom_alias="abc123",
+            )
+        )
+        await session.commit()
+
+    with patch("app.routers.api.generate_short_code", side_effect=["abc123", "def456"]):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+
+    assert res.status_code == 200
+    assert res.json()["short_code"] == "def456"
 
 
 @pytest.mark.asyncio
