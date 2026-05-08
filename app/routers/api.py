@@ -4,7 +4,7 @@ from io import BytesIO
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
@@ -28,9 +28,11 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
                 status_code=400,
                 detail="Invalid alias. Use 3-30 characters: letters, digits, hyphens, underscores.",
             )
+        alias_key = data.custom_alias.lower()
         existing = await session.execute(
             select(Link).where(
-                (Link.short_code == data.custom_alias) | (Link.custom_alias == data.custom_alias)
+                (func.lower(Link.short_code) == alias_key)
+                | (func.lower(Link.custom_alias) == alias_key)
             )
         )
         if existing.scalar_one_or_none():
@@ -41,9 +43,11 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
             candidate = generate_short_code()
             if candidate.lower() in RESERVED_ALIASES:
                 continue
+            candidate_key = candidate.lower()
             existing = await session.execute(
                 select(Link).where(
-                    (Link.short_code == candidate) | (Link.custom_alias == candidate)
+                    (func.lower(Link.short_code) == candidate_key)
+                    | (func.lower(Link.custom_alias) == candidate_key)
                 )
             )
             if not existing.scalar_one_or_none():

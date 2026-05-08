@@ -70,10 +70,40 @@ async def test_shorten_skips_generated_code_taken_by_custom_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_skips_generated_code_taken_by_alias_case_insensitive(client):
+    async with db_session_factory() as session:
+        session.add(
+            Link(
+                original_url="https://legacy.example.com",
+                short_code="legacy01",
+                custom_alias="AbC123",
+            )
+        )
+        await session.commit()
+
+    with patch("app.routers.api.generate_short_code", side_effect=["abc123", "def456"]):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+
+    assert res.status_code == 201
+    assert res.json()["short_code"] == "def456"
+
+
+@pytest.mark.asyncio
 async def test_shorten_duplicate_alias(client):
     payload = {"url": "https://example.com", "custom_alias": "taken"}
     await client.post("/api/shorten", json=payload)
     res = await client.post("/api/shorten", json=payload)
+    assert res.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_shorten_duplicate_alias_case_insensitive(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://example.com", "custom_alias": "MyLink"}
+    )
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "custom_alias": "mylink"}
+    )
     assert res.status_code == 409
 
 
