@@ -198,6 +198,16 @@ async def test_custom_alias_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_custom_alias_redirect_case_insensitive(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "Gh-Link"}
+    )
+    res = await client.get("/gh-link", follow_redirects=False)
+    assert res.status_code == 307
+    assert res.headers["location"] == "https://github.com"
+
+
+@pytest.mark.asyncio
 async def test_stats_short_url_uses_custom_alias(client):
     await client.post(
         "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-link"}
@@ -205,6 +215,16 @@ async def test_stats_short_url_uses_custom_alias(client):
     res = await client.get("/api/stats/gh-link")
     assert res.status_code == 200
     assert res.json()["short_url"].endswith("/gh-link")
+
+
+@pytest.mark.asyncio
+async def test_stats_lookup_case_insensitive(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "Gh-Link"}
+    )
+    res = await client.get("/api/stats/gh-link")
+    assert res.status_code == 200
+    assert res.json()["short_url"].endswith("/Gh-Link")
 
 
 @pytest.mark.asyncio
@@ -295,6 +315,16 @@ async def test_qr_code(client):
     assert res.status_code == 200
     assert res.headers["content-type"] == "image/png"
     assert len(res.content) > 100
+
+
+@pytest.mark.asyncio
+async def test_qr_code_lookup_case_insensitive(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://example.com", "custom_alias": "Qr-Link"}
+    )
+    res = await client.get("/api/qr/qr-link")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/png"
 
 
 @pytest.mark.asyncio

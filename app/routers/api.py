@@ -80,8 +80,12 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
 @router.get("/api/stats/{code}", response_model=LinkStats)
 async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
+    code_key = code.lower()
     result = await session.execute(
-        select(Link).where((Link.short_code == code) | (Link.custom_alias == code))
+        select(Link).where(
+            (func.lower(Link.short_code) == code_key)
+            | (func.lower(Link.custom_alias) == code_key)
+        )
     )
     link = result.scalar_one_or_none()
     if not link:
@@ -104,8 +108,12 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/api/qr/{code}")
 async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
+    code_key = code.lower()
     result = await session.execute(
-        select(Link).where((Link.short_code == code) | (Link.custom_alias == code))
+        select(Link).where(
+            (func.lower(Link.short_code) == code_key)
+            | (func.lower(Link.custom_alias) == code_key)
+        )
     )
     link = result.scalar_one_or_none()
     if not link:
@@ -125,8 +133,12 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):
+    code_key = code.lower()
     result = await session.execute(
-        select(Link).where((Link.short_code == code) | (Link.custom_alias == code))
+        select(Link).where(
+            (func.lower(Link.short_code) == code_key)
+            | (func.lower(Link.custom_alias) == code_key)
+        )
     )
     link = result.scalar_one_or_none()
     if not link:

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
@@ -18,8 +18,12 @@ async def home(request: Request):
 
 @router.get("/stats/{code}")
 async def stats_page(request: Request, code: str, session: AsyncSession = Depends(get_session)):
+    code_key = code.lower()
     result = await session.execute(
-        select(Link).where((Link.short_code == code) | (Link.custom_alias == code))
+        select(Link).where(
+            (func.lower(Link.short_code) == code_key)
+            | (func.lower(Link.custom_alias) == code_key)
+        )
     )
     link = result.scalar_one_or_none()
     if not link:
