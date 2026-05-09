@@ -23,6 +23,7 @@
 - QR code generation for any link
 - Link expiration via `ttl_hours`
 - Reserved aliases block route collisions
+- URL validation allows only `http://` and `https://` schemes
 - Async SQLite (aiosqlite)
 
 ## Quick Start
@@ -62,6 +63,8 @@ The database is stored in a named volume so your data persists across container 
 POST /api/shorten
 Content-Type: application/json
 ```
+
+Only `http://` and `https://` URLs are accepted.
 
 ```json
 {
