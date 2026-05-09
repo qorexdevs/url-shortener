@@ -441,3 +441,24 @@ async def test_stats_page_short_url_uses_custom_alias(client):
     res = await client.get("/stats/gh-link")
     assert res.status_code == 200
     assert "/gh-link" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_short_code_lookup_case_insensitive(client):
+    with patch("app.routers.api.generate_short_code", return_value="AbC123"):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+
+    res = await client.get("/stats/abc123")
+    assert res.status_code == 200
+    assert "/AbC123" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_custom_alias_lookup_case_insensitive(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "Gh-Link"}
+    )
+    res = await client.get("/stats/gh-link")
+    assert res.status_code == 200
+    assert "/Gh-Link" in res.text
