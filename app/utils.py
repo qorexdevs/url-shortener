@@ -13,7 +13,9 @@ def generate_short_code(length: int = SHORT_CODE_LENGTH) -> str:
     return "".join(random.choices(chars, k=length))
 
 def validate_url(url: str) -> bool:
-    return validators.url(url) is True
+    if validators.url(url) is not True:
+        return False
+    return url.lower().startswith(("http://", "https://"))
 
 def validate_alias(alias: str | None) -> bool:
     if not alias or len(alias) < 3 or len(alias) > 30:

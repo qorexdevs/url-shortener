@@ -27,6 +27,7 @@ def test_validate_url_invalid():
     assert validate_url("not-a-url") is False
     assert validate_url("") is False
     assert validate_url("ftp://nope") is False
+    assert validate_url("ftp://example.com") is False
 
 
 def test_validate_alias_valid():
