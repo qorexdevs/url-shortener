@@ -17,18 +17,21 @@ router = APIRouter()
 
 @router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
 async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_session)):
-    if not validate_url(data.url):
+    url = data.url.strip()
+    alias = data.custom_alias.strip() if data.custom_alias is not None else None
+
+    if not validate_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
     code = None
 
-    if data.custom_alias is not None:
-        if not validate_alias(data.custom_alias):
+    if alias is not None:
+        if not validate_alias(alias):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid alias. Use 3-30 characters: letters, digits, hyphens, underscores.",
             )
-        alias_key = data.custom_alias.lower()
+        alias_key = alias.lower()
         existing = await session.execute(
             select(Link).where(
                 (func.lower(Link.short_code) == alias_key)
@@ -37,7 +40,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         )
         if existing.scalar_one_or_none():
             raise HTTPException(status_code=409, detail="Alias already taken")
-        code = data.custom_alias
+        code = alias
     else:
         for _ in range(10):
             candidate = generate_short_code()
@@ -64,16 +67,16 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         expires_at = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
 
     link = Link(
-        original_url=data.url,
+        original_url=url,
         short_code=code,
-        custom_alias=data.custom_alias,
+        custom_alias=alias,
         expires_at=expires_at,
     )
     session.add(link)
     await session.commit()
 
     return ShortenResponse(
-        original_url=data.url,
+        original_url=url,
         short_url=f"{BASE_URL}/{code}",
         short_code=code,
     )

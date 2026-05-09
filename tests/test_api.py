@@ -27,6 +27,22 @@ async def test_shorten_with_custom_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_trims_url_whitespace(client):
+    res = await client.post("/api/shorten", json={"url": "  https://example.com  "})
+    assert res.status_code == 201
+    assert res.json()["original_url"] == "https://example.com"
+
+
+@pytest.mark.asyncio
+async def test_shorten_trims_custom_alias_whitespace(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "custom_alias": "  mylink  "}
+    )
+    assert res.status_code == 201
+    assert res.json()["short_code"] == "mylink"
+
+
+@pytest.mark.asyncio
 async def test_shorten_skips_reserved_generated_code(client):
     with patch("app.routers.api.generate_short_code", side_effect=["static", "abc123"]):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})
