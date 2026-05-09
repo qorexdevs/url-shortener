@@ -34,9 +34,26 @@ async def test_shorten_trims_url_whitespace(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_trims_url_tabs_and_newlines(client):
+    res = await client.post("/api/shorten", json={"url": "\n\thttps://example.com\t\n"})
+    assert res.status_code == 201
+    assert res.json()["original_url"] == "https://example.com"
+
+
+@pytest.mark.asyncio
 async def test_shorten_trims_custom_alias_whitespace(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "  mylink  "}
+    )
+    assert res.status_code == 201
+    assert res.json()["short_code"] == "mylink"
+
+
+@pytest.mark.asyncio
+async def test_shorten_trims_custom_alias_tabs_and_newlines(client):
+    res = await client.post(
+        "/api/shorten",
+        json={"url": "https://example.com", "custom_alias": "\n\tmylink\t\n"},
     )
     assert res.status_code == 201
     assert res.json()["short_code"] == "mylink"
