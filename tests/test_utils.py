@@ -21,6 +21,8 @@ def test_validate_url_valid():
     assert validate_url("https://example.com") is True
     assert validate_url("http://example.com/path?q=1") is True
     assert validate_url("https://sub.domain.co.uk/a/b") is True
+    assert validate_url("http://localhost") is True
+    assert validate_url("https://localhost:3000/path?q=1") is True
 
 
 def test_validate_url_invalid():
@@ -28,6 +30,7 @@ def test_validate_url_invalid():
     assert validate_url("") is False
     assert validate_url("ftp://nope") is False
     assert validate_url("ftp://example.com") is False
+    assert validate_url("https://local_host") is False
 
 
 def test_validate_alias_valid():

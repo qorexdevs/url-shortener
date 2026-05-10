@@ -1,6 +1,7 @@
 import random
 import re
 import string
+from urllib.parse import urlsplit
 
 import validators
 
@@ -13,9 +14,13 @@ def generate_short_code(length: int = SHORT_CODE_LENGTH) -> str:
     return "".join(random.choices(chars, k=length))
 
 def validate_url(url: str) -> bool:
-    if validators.url(url) is not True:
+    if validators.url(url) is True:
+        return url.lower().startswith(("http://", "https://"))
+
+    parsed = urlsplit(url)
+    if parsed.scheme.lower() not in {"http", "https"}:
         return False
-    return url.lower().startswith(("http://", "https://"))
+    return parsed.hostname == "localhost"
 
 def validate_alias(alias: str | None) -> bool:
     if not alias or len(alias) < 3 or len(alias) > 30:

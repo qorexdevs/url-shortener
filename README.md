@@ -64,7 +64,7 @@ POST /api/shorten
 Content-Type: application/json
 ```
 
-Only `http://` and `https://` URLs are accepted.
+Only `http://` and `https://` URLs are accepted, including `localhost` addresses.
 
 ```json
 {

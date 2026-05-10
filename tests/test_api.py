@@ -147,6 +147,13 @@ async def test_shorten_invalid_url(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_allows_localhost_url(client):
+    res = await client.post("/api/shorten", json={"url": "http://localhost:3000/test"})
+    assert res.status_code == 201
+    assert res.json()["original_url"] == "http://localhost:3000/test"
+
+
+@pytest.mark.asyncio
 async def test_shorten_invalid_alias(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "ab"}
