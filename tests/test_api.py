@@ -153,6 +153,12 @@ async def test_shorten_invalid_ipv6_url(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_rejects_localhost_with_invalid_port(client):
+    res = await client.post("/api/shorten", json={"url": "http://localhost:abc/test"})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_shorten_allows_localhost_url(client):
     res = await client.post("/api/shorten", json={"url": "http://localhost:3000/test"})
     assert res.status_code == 201

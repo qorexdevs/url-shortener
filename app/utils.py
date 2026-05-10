@@ -19,6 +19,7 @@ def validate_url(url: str) -> bool:
 
     try:
         parsed = urlsplit(url)
+        parsed.port
     except ValueError:
         return False
     if parsed.scheme.lower() not in {"http", "https"}:
