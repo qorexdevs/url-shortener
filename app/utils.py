@@ -17,7 +17,10 @@ def validate_url(url: str) -> bool:
     if validators.url(url) is True:
         return url.lower().startswith(("http://", "https://"))
 
-    parsed = urlsplit(url)
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return False
     if parsed.scheme.lower() not in {"http", "https"}:
         return False
     return parsed.hostname == "localhost"

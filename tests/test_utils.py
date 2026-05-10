@@ -33,6 +33,7 @@ def test_validate_url_invalid():
     assert validate_url("ftp://nope") is False
     assert validate_url("ftp://example.com") is False
     assert validate_url("https://local_host") is False
+    assert validate_url("http://[::1") is False
 
 
 def test_validate_alias_valid():
