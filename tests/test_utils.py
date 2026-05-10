@@ -23,6 +23,8 @@ def test_validate_url_valid():
     assert validate_url("https://sub.domain.co.uk/a/b") is True
     assert validate_url("http://localhost") is True
     assert validate_url("https://localhost:3000/path?q=1") is True
+    assert validate_url("http://127.0.0.1:3000/path") is True
+    assert validate_url("https://[::1]:8443/path") is True
 
 
 def test_validate_url_invalid():

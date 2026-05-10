@@ -64,7 +64,7 @@ POST /api/shorten
 Content-Type: application/json
 ```
 
-Only `http://` and `https://` URLs are accepted, including `localhost` addresses.
+Only `http://` and `https://` URLs are accepted, including `localhost` and loopback IP addresses (`127.0.0.1`, `::1`).
 
 ```json
 {
