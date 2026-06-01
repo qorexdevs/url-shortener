@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+﻿from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -528,3 +528,4 @@ async def test_stats_page_custom_alias_lookup_case_insensitive(client):
     res = await client.get("/stats/gh-link")
     assert res.status_code == 200
     assert "/Gh-Link" in res.text
+
