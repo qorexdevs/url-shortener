@@ -70,3 +70,4 @@ def test_validate_alias_reserved_path():
 def test_validate_alias_none():
     assert validate_alias(None) is False
 
+
