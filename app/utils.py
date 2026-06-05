@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 import validators
 
-from app.config import SHORT_CODE_LENGTH
+from app.config import MAX_URL_LENGTH, SHORT_CODE_LENGTH
 
 RESERVED_ALIASES = {"api", "static", "stats", "docs", "redoc"}
 
@@ -14,6 +14,8 @@ def generate_short_code(length: int = SHORT_CODE_LENGTH) -> str:
     return "".join(random.choices(chars, k=length))
 
 def validate_url(url: str) -> bool:
+    if len(url) > MAX_URL_LENGTH:
+        return False
     if validators.url(url) is True:
         return url.lower().startswith(("http://", "https://"))
 
