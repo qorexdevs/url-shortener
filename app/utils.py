@@ -33,4 +33,4 @@ def validate_alias(alias: str | None) -> bool:
         return False
     if alias.lower() in RESERVED_ALIASES:
         return False
-    return bool(re.match(r"^[a-zA-Z0-9_-]+$", alias))
+    return bool(re.fullmatch(r"[a-zA-Z0-9_-]+", alias))

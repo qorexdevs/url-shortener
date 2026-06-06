@@ -67,6 +67,11 @@ def test_validate_alias_bad_chars():
     assert validate_alias("\u0441\u043b\u043e\u0432\u043e") is False
 
 
+def test_validate_alias_trailing_newline():
+    assert validate_alias("abc\n") is False
+    assert validate_alias("my-link\n") is False
+
+
 def test_validate_alias_reserved_path():
     assert validate_alias("api") is False
     assert validate_alias("static") is False
