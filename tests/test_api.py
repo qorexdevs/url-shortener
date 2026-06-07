@@ -1,7 +1,8 @@
 ﻿from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Link
 from conftest import test_session as db_session_factory
@@ -137,6 +138,21 @@ async def test_shorten_duplicate_alias_case_insensitive(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "mylink"}
     )
+    assert res.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_shorten_duplicate_alias_race_returns_conflict(client):
+    payload = {"url": "https://example.com", "custom_alias": "racy"}
+    res = await client.post("/api/shorten", json=payload)
+    assert res.status_code == 201
+
+    # simulate losing the check-then-insert race: the existence check sees
+    # nothing, the unique constraint fires on commit
+    missed = MagicMock()
+    missed.scalar_one_or_none.return_value = None
+    with patch.object(AsyncSession, "execute", AsyncMock(return_value=missed)):
+        res = await client.post("/api/shorten", json=payload)
     assert res.status_code == 409
 
 

@@ -5,6 +5,7 @@ import qrcode
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
@@ -73,7 +74,12 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         expires_at=expires_at,
     )
     session.add(link)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # lost a race with a concurrent request for the same code
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="Alias already taken")
 
     return ShortenResponse(
         original_url=url,
