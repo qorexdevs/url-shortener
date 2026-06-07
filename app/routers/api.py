@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import BASE_URL
+from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
 from app.schemas import LinkStats, ShortenRequest, ShortenResponse
@@ -23,6 +23,13 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
     if not validate_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
+
+    if data.ttl_hours is not None and data.ttl_hours <= 0:
+        raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
+    if data.ttl_hours is not None and data.ttl_hours > MAX_TTL_HOURS:
+        raise HTTPException(
+            status_code=400, detail=f"ttl_hours must be at most {MAX_TTL_HOURS}"
+        )
 
     code = None
 
@@ -59,9 +66,6 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
                 break
         if not code:
             raise HTTPException(status_code=500, detail="Failed to generate unique code")
-
-    if data.ttl_hours is not None and data.ttl_hours <= 0:
-        raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
 
     expires_at = None
     if data.ttl_hours is not None:

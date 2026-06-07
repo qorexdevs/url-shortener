@@ -363,6 +363,23 @@ async def test_shorten_rejects_negative_ttl(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_rejects_ttl_over_limit(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24 * 365 * 10 + 1}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_shorten_rejects_huge_ttl_without_500(client):
+    # used to overflow timedelta and crash with a 500
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 10**15}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_expired_link_returns_410(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
