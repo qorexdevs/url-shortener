@@ -2,12 +2,11 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
 from app.database import get_session
-from app.models import Link
+from app.queries import find_link
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -18,14 +17,7 @@ async def home(request: Request):
 
 @router.get("/stats/{code}")
 async def stats_page(request: Request, code: str, session: AsyncSession = Depends(get_session)):
-    code_key = code.lower()
-    result = await session.execute(
-        select(Link).where(
-            (func.lower(Link.short_code) == code_key)
-            | (func.lower(Link.custom_alias) == code_key)
-        )
-    )
-    link = result.scalar_one_or_none()
+    link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 

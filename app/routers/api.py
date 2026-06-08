@@ -4,13 +4,13 @@ from io import BytesIO
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
-from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
+from app.queries import find_link
 from app.schemas import LinkStats, ShortenRequest, ShortenResponse
 from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, validate_url
 
@@ -39,14 +39,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
                 status_code=400,
                 detail="Invalid alias. Use 3-30 characters: letters, digits, hyphens, underscores.",
             )
-        alias_key = alias.lower()
-        existing = await session.execute(
-            select(Link).where(
-                (func.lower(Link.short_code) == alias_key)
-                | (func.lower(Link.custom_alias) == alias_key)
-            )
-        )
-        if existing.scalar_one_or_none():
+        if await find_link(session, alias):
             raise HTTPException(status_code=409, detail="Alias already taken")
         code = alias
     else:
@@ -54,14 +47,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
             candidate = generate_short_code()
             if candidate.lower() in RESERVED_ALIASES:
                 continue
-            candidate_key = candidate.lower()
-            existing = await session.execute(
-                select(Link).where(
-                    (func.lower(Link.short_code) == candidate_key)
-                    | (func.lower(Link.custom_alias) == candidate_key)
-                )
-            )
-            if not existing.scalar_one_or_none():
+            if not await find_link(session, candidate):
                 code = candidate
                 break
         if not code:
@@ -93,14 +79,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
 @router.get("/api/stats/{code}", response_model=LinkStats)
 async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
-    code_key = code.lower()
-    result = await session.execute(
-        select(Link).where(
-            (func.lower(Link.short_code) == code_key)
-            | (func.lower(Link.custom_alias) == code_key)
-        )
-    )
-    link = result.scalar_one_or_none()
+    link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
@@ -121,14 +100,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/api/qr/{code}")
 async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
-    code_key = code.lower()
-    result = await session.execute(
-        select(Link).where(
-            (func.lower(Link.short_code) == code_key)
-            | (func.lower(Link.custom_alias) == code_key)
-        )
-    )
-    link = result.scalar_one_or_none()
+    link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
@@ -146,14 +118,7 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):
-    code_key = code.lower()
-    result = await session.execute(
-        select(Link).where(
-            (func.lower(Link.short_code) == code_key)
-            | (func.lower(Link.custom_alias) == code_key)
-        )
-    )
-    link = result.scalar_one_or_none()
+    link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
