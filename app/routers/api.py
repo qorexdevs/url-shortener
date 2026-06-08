@@ -4,7 +4,8 @@ from io import BytesIO
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL, MAX_TTL_HOURS
@@ -76,6 +77,14 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         short_url=f"{BASE_URL}/{code}",
         short_code=code,
     )
+
+@router.get("/api/health")
+async def health(session: AsyncSession = Depends(get_session)):
+    try:
+        await session.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    return {"status": "ok"}
 
 @router.get("/api/stats/{code}", response_model=LinkStats)
 async def get_stats(code: str, session: AsyncSession = Depends(get_session)):

@@ -9,6 +9,13 @@ from conftest import test_session as db_session_factory
 
 
 @pytest.mark.asyncio
+async def test_health_ok(client):
+    res = await client.get("/api/health")
+    assert res.status_code == 200
+    assert res.json() == {"status": "ok"}
+
+
+@pytest.mark.asyncio
 async def test_shorten_url(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     assert res.status_code == 201
