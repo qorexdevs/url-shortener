@@ -394,7 +394,7 @@ async def test_expired_link_returns_410(client):
     code = res.json()["short_code"]
 
     future = datetime.now(timezone.utc) + timedelta(hours=2)
-    with patch("app.routers.api.datetime") as mock_dt:
+    with patch("app.queries.datetime") as mock_dt:
         mock_dt.now.return_value = future
         mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
         res = await client.get(f"/{code}", follow_redirects=False)
@@ -414,7 +414,7 @@ async def test_link_expires_at_boundary(client):
         )
     code = res.json()["short_code"]
 
-    with patch("app.routers.api.datetime") as mock_dt:
+    with patch("app.queries.datetime") as mock_dt:
         mock_dt.now.return_value = expires_at
         mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
         res = await client.get(f"/{code}", follow_redirects=False)
@@ -429,7 +429,7 @@ async def test_stats_shows_expired(client):
     code = res.json()["short_code"]
 
     future = datetime.now(timezone.utc) + timedelta(hours=2)
-    with patch("app.routers.api.datetime") as mock_dt:
+    with patch("app.queries.datetime") as mock_dt:
         mock_dt.now.return_value = future
         mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
         stats = await client.get(f"/api/stats/{code}")
@@ -475,7 +475,7 @@ async def test_expired_qr_code_returns_410(client):
     code = res.json()["short_code"]
 
     future = datetime.now(timezone.utc) + timedelta(hours=2)
-    with patch("app.routers.api.datetime") as mock_dt:
+    with patch("app.queries.datetime") as mock_dt:
         mock_dt.now.return_value = future
         mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
         res = await client.get(f"/api/qr/{code}")

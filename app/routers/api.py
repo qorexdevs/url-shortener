@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
-from app.queries import find_link
+from app.queries import find_link, link_expired
 from app.schemas import LinkStats, ShortenRequest, ShortenResponse
 from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, validate_url
 
@@ -92,8 +92,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    expired = link.expires_at is not None and link.expires_at <= now
+    expired = link_expired(link)
     short_path = link.custom_alias or link.short_code
 
     return LinkStats(
@@ -113,8 +112,7 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if link.expires_at and link.expires_at <= now:
+    if link_expired(link):
         raise HTTPException(status_code=410, detail="Link has expired")
 
     short_path = link.custom_alias or link.short_code
@@ -131,12 +129,11 @@ async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if link.expires_at and link.expires_at <= now:
+    if link_expired(link):
         raise HTTPException(status_code=410, detail="Link has expired")
 
     link.clicks += 1
-    link.last_clicked = now
+    link.last_clicked = datetime.now(timezone.utc).replace(tzinfo=None)
     await session.commit()
 
     return RedirectResponse(url=link.original_url, status_code=307)
