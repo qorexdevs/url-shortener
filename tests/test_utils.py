@@ -37,6 +37,13 @@ def test_validate_url_invalid():
     assert validate_url("http://[::1") is False
 
 
+def test_validate_url_idn_host():
+    assert validate_url("https://münchen.de") is True
+    assert validate_url("https://пример.рф/path") is True
+    assert validate_url("https://xn--mnchen-3ya.de") is True
+    assert validate_url("http://münchen.de:8080/a?q=1") is True
+
+
 def test_validate_url_max_length():
     long_path = "https://example.com/" + "a" * 2048
     assert validate_url(long_path) is False
