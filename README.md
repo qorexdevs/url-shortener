@@ -21,6 +21,7 @@
 - Dark-themed responsive UI
 - REST API for programmatic access
 - QR code generation for any link
+- Link preview to see a destination without counting a click
 - Link expiration via `ttl_hours`
 - Reserved aliases block route collisions
 - URL validation allows only `http://` and `https://` schemes
@@ -102,6 +103,23 @@ GET /api/stats/{code}
   "expired": false
 }
 ```
+
+### Preview
+
+```http
+GET /api/preview/{code}
+```
+
+```json
+{
+  "short_url": "http://localhost:8000/my-link",
+  "original_url": "https://example.com/very/long/url",
+  "expires_at": "2025-01-02T00:00:00",
+  "expired": false
+}
+```
+
+Resolves where a short link points without following it. No click is counted and there is no redirect, so it is safe for checking a link before opening it.
 
 ### QR Code
 

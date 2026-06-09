@@ -12,7 +12,7 @@ from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
 from app.queries import find_link, link_expired
-from app.schemas import LinkStats, ShortenRequest, ShortenResponse
+from app.schemas import LinkPreview, LinkStats, ShortenRequest, ShortenResponse
 from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, validate_url
 
 router = APIRouter()
@@ -104,6 +104,21 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         last_clicked=link.last_clicked,
         expires_at=link.expires_at,
         expired=expired,
+    )
+
+@router.get("/api/preview/{code}", response_model=LinkPreview)
+async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
+    # where a short link points without following it: no click counted, no redirect
+    link = await find_link(session, code)
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    short_path = link.custom_alias or link.short_code
+    return LinkPreview(
+        short_url=f"{BASE_URL}/{short_path}",
+        original_url=link.original_url,
+        expires_at=link.expires_at,
+        expired=link_expired(link),
     )
 
 @router.get("/api/qr/{code}")

@@ -288,6 +288,53 @@ async def test_stats_not_found(client):
 
 
 @pytest.mark.asyncio
+async def test_preview_returns_destination(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.get(f"/api/preview/{code}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["original_url"] == "https://example.com"
+    assert data["expired"] is False
+
+
+@pytest.mark.asyncio
+async def test_preview_does_not_count_click(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    await client.get(f"/api/preview/{code}")
+    await client.get(f"/api/preview/{code}")
+
+    res = await client.get(f"/api/stats/{code}")
+    assert res.json()["clicks"] == 0
+    assert res.json()["last_clicked"] is None
+
+
+@pytest.mark.asyncio
+async def test_preview_not_found(client):
+    res = await client.get("/api/preview/nope")
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_preview_marks_expired(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+    )
+    code = res.json()["short_code"]
+
+    future = datetime.now(timezone.utc) + timedelta(hours=2)
+    with patch("app.queries.datetime") as mock_dt:
+        mock_dt.now.return_value = future
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.get(f"/api/preview/{code}")
+    assert res.status_code == 200
+    assert res.json()["expired"] is True
+
+
+@pytest.mark.asyncio
 async def test_redirect_increments_clicks(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]
