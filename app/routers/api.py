@@ -121,7 +121,9 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
     buf = BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
-    return StreamingResponse(buf, media_type="image/png")
+    # the qr image never changes for a code, so let browsers and caches keep it
+    headers = {"Cache-Control": "public, max-age=86400"}
+    return StreamingResponse(buf, media_type="image/png", headers=headers)
 
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):

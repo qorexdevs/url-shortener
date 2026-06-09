@@ -443,6 +443,7 @@ async def test_qr_code(client):
     res = await client.get(f"/api/qr/{code}")
     assert res.status_code == 200
     assert res.headers["content-type"] == "image/png"
+    assert "max-age" in res.headers["cache-control"]
     assert len(res.content) > 100
 
 
