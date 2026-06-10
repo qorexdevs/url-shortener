@@ -1,5 +1,5 @@
-import random
 import re
+import secrets
 import string
 from urllib.parse import urlsplit, urlunsplit
 
@@ -11,7 +11,7 @@ RESERVED_ALIASES = {"api", "static", "stats", "docs", "redoc"}
 
 def generate_short_code(length: int = SHORT_CODE_LENGTH) -> str:
     chars = string.ascii_letters + string.digits
-    return "".join(random.choices(chars, k=length))
+    return "".join(secrets.choice(chars) for _ in range(length))
 
 def validate_url(url: str) -> bool:
     if len(url) > MAX_URL_LENGTH:
