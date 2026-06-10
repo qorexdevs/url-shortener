@@ -495,6 +495,24 @@ async def test_qr_code(client):
 
 
 @pytest.mark.asyncio
+async def test_qr_code_svg(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    res = await client.get(f"/api/qr/{code}?fmt=svg")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/svg+xml"
+    assert b"<svg" in res.content
+
+
+@pytest.mark.asyncio
+async def test_qr_code_bad_format(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    res = await client.get(f"/api/qr/{code}?fmt=gif")
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_qr_code_lookup_case_insensitive(client):
     await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "Qr-Link"}

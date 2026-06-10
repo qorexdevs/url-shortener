@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 import qrcode
+import qrcode.image.svg as svg
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import text
@@ -122,7 +123,11 @@ async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
     )
 
 @router.get("/api/qr/{code}")
-async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
+async def get_qr_code(code: str, fmt: str = "png", session: AsyncSession = Depends(get_session)):
+    fmt = fmt.lower()
+    if fmt not in ("png", "svg"):
+        raise HTTPException(status_code=400, detail="fmt must be png or svg")
+
     link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
@@ -132,13 +137,17 @@ async def get_qr_code(code: str, session: AsyncSession = Depends(get_session)):
 
     short_path = link.custom_alias or link.short_code
     short_url = f"{BASE_URL}/{short_path}"
-    img = qrcode.make(short_url)
     buf = BytesIO()
-    img.save(buf, format="PNG")
+    if fmt == "svg":
+        qrcode.make(short_url, image_factory=svg.SvgPathImage).save(buf)
+        media_type = "image/svg+xml"
+    else:
+        qrcode.make(short_url).save(buf, format="PNG")
+        media_type = "image/png"
     buf.seek(0)
     # the qr image never changes for a code, so let browsers and caches keep it
     headers = {"Cache-Control": "public, max-age=86400"}
-    return StreamingResponse(buf, media_type="image/png", headers=headers)
+    return StreamingResponse(buf, media_type=media_type, headers=headers)
 
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):

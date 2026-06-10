@@ -124,10 +124,12 @@ Resolves where a short link points without following it. No click is counted and
 ### QR Code
 
 ```http
-GET /api/qr/{code}  ->  PNG image
+GET /api/qr/{code}          ->  PNG image
+GET /api/qr/{code}?fmt=svg   ->  SVG image
 ```
 
 Returns a QR code image encoding the short URL. Useful for sharing links in print or presentations.
+PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into print or the web.
 
 ### Redirect
 
