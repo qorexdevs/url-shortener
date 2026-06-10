@@ -45,6 +45,28 @@ def _idna_url(parsed) -> str | None:
     netloc = f"{ascii_host}:{parsed.port}" if parsed.port is not None else ascii_host
     return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
 
+def normalize_url(url: str) -> str:
+    # store an ascii host so the 307 Location header (latin-1 only) never breaks
+    # on an international domain like пример.рф; münchen.de also goes to punycode
+    parsed = urlsplit(url)
+    host = parsed.hostname
+    if not host or host.isascii():
+        return url
+    try:
+        ascii_host = host.encode("idna").decode("ascii")
+    except (UnicodeError, ValueError):
+        return url
+    userinfo = ""
+    if parsed.username:
+        userinfo = parsed.username
+        if parsed.password:
+            userinfo += f":{parsed.password}"
+        userinfo += "@"
+    netloc = f"{userinfo}{ascii_host}"
+    if parsed.port is not None:
+        netloc += f":{parsed.port}"
+    return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+
 def validate_alias(alias: str | None) -> bool:
     if not alias or len(alias) < 3 or len(alias) > 30:
         return False

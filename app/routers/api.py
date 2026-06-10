@@ -14,7 +14,13 @@ from app.database import get_session
 from app.models import Link
 from app.queries import find_link, link_expired
 from app.schemas import LinkPreview, LinkStats, ShortenRequest, ShortenResponse
-from app.utils import RESERVED_ALIASES, generate_short_code, validate_alias, validate_url
+from app.utils import (
+    RESERVED_ALIASES,
+    generate_short_code,
+    normalize_url,
+    validate_alias,
+    validate_url,
+)
 
 router = APIRouter()
 
@@ -25,6 +31,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
     if not validate_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
+    url = normalize_url(url)
 
     if data.ttl_hours is not None and data.ttl_hours <= 0:
         raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")

@@ -1,4 +1,4 @@
-﻿from app.utils import generate_short_code, validate_alias, validate_url
+﻿from app.utils import generate_short_code, normalize_url, validate_alias, validate_url
 
 
 def test_generate_short_code_default_length():
@@ -42,6 +42,20 @@ def test_validate_url_idn_host():
     assert validate_url("https://пример.рф/path") is True
     assert validate_url("https://xn--mnchen-3ya.de") is True
     assert validate_url("http://münchen.de:8080/a?q=1") is True
+
+
+def test_normalize_url_idn_host_to_punycode():
+    # the result must be latin-1 safe so it can ride in a redirect Location header
+    out = normalize_url("https://пример.рф/path?q=1")
+    assert out == "https://xn--e1afmkfd.xn--p1ai/path?q=1"
+    out.encode("latin-1")
+
+    assert normalize_url("http://münchen.de:8080/a") == "http://xn--mnchen-3ya.de:8080/a"
+
+
+def test_normalize_url_leaves_ascii_untouched():
+    assert normalize_url("https://example.com/path?q=1") == "https://example.com/path?q=1"
+    assert normalize_url("http://localhost:3000") == "http://localhost:3000"
 
 
 def test_validate_url_max_length():
