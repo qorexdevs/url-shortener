@@ -11,6 +11,7 @@ class ShortenResponse(BaseModel):
     original_url: str
     short_url: str
     short_code: str
+    expires_at: datetime | None = None
 
 class LinkPreview(BaseModel):
     short_url: str

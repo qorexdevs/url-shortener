@@ -84,6 +84,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         original_url=url,
         short_url=f"{BASE_URL}/{code}",
         short_code=code,
+        expires_at=expires_at,
     )
 
 @router.get("/api/health")

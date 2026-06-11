@@ -392,12 +392,21 @@ async def test_shorten_with_ttl(client):
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
     )
     assert res.status_code == 201
-    code = res.json()["short_code"]
+    body = res.json()
+    code = body["short_code"]
+    assert body["expires_at"] is not None
 
     stats = await client.get(f"/api/stats/{code}")
     data = stats.json()
     assert data["expires_at"] is not None
     assert data["expired"] is False
+
+
+@pytest.mark.asyncio
+async def test_shorten_without_ttl_has_no_expiry(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+    assert res.json()["expires_at"] is None
 
 
 @pytest.mark.asyncio

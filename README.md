@@ -81,9 +81,12 @@ Only `http://` and `https://` URLs are accepted, including `localhost` and loopb
 {
   "original_url": "https://example.com/very/long/url",
   "short_url": "http://localhost:8000/my-link",
-  "short_code": "my-link"
+  "short_code": "my-link",
+  "expires_at": "2025-01-02T00:00:00"
 }
 ```
+
+`expires_at` is `null` when no `ttl_hours` was set.
 
 ### Get Link Stats
 
