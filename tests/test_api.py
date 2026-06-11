@@ -662,3 +662,31 @@ async def test_stats_page_custom_alias_lookup_case_insensitive(client):
     assert res.status_code == 200
     assert "/Gh-Link" in res.text
 
+
+
+@pytest.mark.asyncio
+async def test_delete_link(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.delete(f"/api/links/{code}")
+    assert res.status_code == 204
+
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_link_case_insensitive(client):
+    with patch("app.routers.api.generate_short_code", return_value="AbC123"):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.status_code == 201
+
+    res = await client.delete("/api/links/abc123")
+    assert res.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_delete_link_not_found(client):
+    res = await client.delete("/api/links/nope")
+    assert res.status_code == 404

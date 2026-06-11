@@ -168,6 +168,14 @@ async def get_qr_code(
     headers = {"Cache-Control": "public, max-age=86400"}
     return StreamingResponse(buf, media_type=media_type, headers=headers)
 
+@router.delete("/api/links/{code}", status_code=204)
+async def delete_link(code: str, session: AsyncSession = Depends(get_session)):
+    link = await find_link(session, code)
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+    await session.delete(link)
+    await session.commit()
+
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):
     link = await find_link(session, code)

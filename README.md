@@ -133,6 +133,14 @@ Returns a QR code image encoding the short URL. Useful for sharing links in prin
 PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into print or the web.
 `scale` sets the pixel size of each module (1-40, default 10) and `border` the quiet zone width (0-20, default 4).
 
+### Delete
+
+```http
+DELETE /api/links/{code}  ->  204 No Content
+```
+
+Removes a short link by its code or custom alias. Returns 404 if nothing matches. The code lookup is case-insensitive, same as the other endpoints.
+
 ### Redirect
 
 ```http
