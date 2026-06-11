@@ -513,6 +513,33 @@ async def test_qr_code_bad_format(client):
 
 
 @pytest.mark.asyncio
+async def test_qr_code_scale_changes_size(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    small = await client.get(f"/api/qr/{code}?scale=2")
+    big = await client.get(f"/api/qr/{code}?scale=20")
+    assert small.status_code == 200
+    assert big.status_code == 200
+    assert len(big.content) > len(small.content)
+
+
+@pytest.mark.asyncio
+async def test_qr_code_rejects_bad_scale(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    assert (await client.get(f"/api/qr/{code}?scale=0")).status_code == 400
+    assert (await client.get(f"/api/qr/{code}?scale=99")).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_qr_code_rejects_bad_border(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    assert (await client.get(f"/api/qr/{code}?border=-1")).status_code == 400
+    assert (await client.get(f"/api/qr/{code}?border=99")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_qr_code_lookup_case_insensitive(client):
     await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "Qr-Link"}

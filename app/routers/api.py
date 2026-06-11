@@ -130,10 +130,20 @@ async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
     )
 
 @router.get("/api/qr/{code}")
-async def get_qr_code(code: str, fmt: str = "png", session: AsyncSession = Depends(get_session)):
+async def get_qr_code(
+    code: str,
+    fmt: str = "png",
+    scale: int = 10,
+    border: int = 4,
+    session: AsyncSession = Depends(get_session),
+):
     fmt = fmt.lower()
     if fmt not in ("png", "svg"):
         raise HTTPException(status_code=400, detail="fmt must be png or svg")
+    if not 1 <= scale <= 40:
+        raise HTTPException(status_code=400, detail="scale must be between 1 and 40")
+    if not 0 <= border <= 20:
+        raise HTTPException(status_code=400, detail="border must be between 0 and 20")
 
     link = await find_link(session, code)
     if not link:
@@ -146,10 +156,12 @@ async def get_qr_code(code: str, fmt: str = "png", session: AsyncSession = Depen
     short_url = f"{BASE_URL}/{short_path}"
     buf = BytesIO()
     if fmt == "svg":
-        qrcode.make(short_url, image_factory=svg.SvgPathImage).save(buf)
+        qrcode.make(
+            short_url, image_factory=svg.SvgPathImage, box_size=scale, border=border
+        ).save(buf)
         media_type = "image/svg+xml"
     else:
-        qrcode.make(short_url).save(buf, format="PNG")
+        qrcode.make(short_url, box_size=scale, border=border).save(buf, format="PNG")
         media_type = "image/png"
     buf.seek(0)
     # the qr image never changes for a code, so let browsers and caches keep it
