@@ -140,10 +140,10 @@ PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into pr
 
 ```http
 PATCH /api/links/{code}
-{ "url": "https://example.org/new" }
+{ "url": "https://example.org/new", "ttl_hours": 24 }
 ```
 
-Points an existing short link at a new destination while keeping its code, alias, click count and expiry. The URL is validated and normalized like on shorten. Returns the updated stats, 400 on a bad URL, 404 if nothing matches.
+Updates an existing link in place, keeping its code, alias and click count. Send `url` to point it somewhere new, `ttl_hours` to reset the expiry window from now, or both. At least one is required. The URL is validated and normalized like on shorten, and `ttl_hours` follows the same bounds. Returns the updated stats, 400 on a bad URL, bad ttl or an empty body, 404 if nothing matches.
 
 ### Delete
 

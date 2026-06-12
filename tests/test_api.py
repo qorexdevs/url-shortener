@@ -759,3 +759,45 @@ async def test_retarget_link_rejects_bad_url(client):
 async def test_retarget_link_not_found(client):
     res = await client.patch("/api/links/nope", json={"url": "https://example.com"})
     assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_retarget_sets_expiry(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    assert res.json()["expires_at"] is None
+
+    res = await client.patch(f"/api/links/{code}", json={"ttl_hours": 24})
+    assert res.status_code == 200
+    assert res.json()["expires_at"] is not None
+    assert res.json()["original_url"] == "https://example.com"
+
+
+@pytest.mark.asyncio
+async def test_retarget_url_and_ttl_together(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(
+        f"/api/links/{code}", json={"url": "https://example.org", "ttl_hours": 48}
+    )
+    assert res.json()["original_url"] == "https://example.org"
+    assert res.json()["expires_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_retarget_empty_body_rejected(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_retarget_rejects_bad_ttl(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"ttl_hours": 0})
+    assert res.status_code == 400

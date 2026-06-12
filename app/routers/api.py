@@ -179,16 +179,31 @@ async def get_qr_code(
 async def retarget_link(
     code: str, data: RetargetRequest, session: AsyncSession = Depends(get_session)
 ):
-    # point an existing short link at a new destination, keeping the code and clicks
+    # update an existing link in place, keeping the code and clicks: a new
+    # destination, a fresh expiry window, or both
     link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    url = data.url.strip()
-    if not validate_url(url):
-        raise HTTPException(status_code=400, detail="Invalid URL")
+    if data.url is None and data.ttl_hours is None:
+        raise HTTPException(status_code=400, detail="Provide url or ttl_hours")
 
-    link.original_url = normalize_url(url)
+    if data.url is not None:
+        url = data.url.strip()
+        if not validate_url(url):
+            raise HTTPException(status_code=400, detail="Invalid URL")
+        link.original_url = normalize_url(url)
+
+    if data.ttl_hours is not None:
+        if data.ttl_hours <= 0:
+            raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
+        if data.ttl_hours > MAX_TTL_HOURS:
+            raise HTTPException(
+                status_code=400, detail=f"ttl_hours must be at most {MAX_TTL_HOURS}"
+            )
+        expires = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
+        link.expires_at = expires.replace(tzinfo=None)
+
     await session.commit()
 
     short_path = link.custom_alias or link.short_code
