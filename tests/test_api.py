@@ -721,3 +721,41 @@ async def test_delete_link_case_insensitive(client):
 async def test_delete_link_not_found(client):
     res = await client.delete("/api/links/nope")
     assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_retarget_link(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"url": "https://example.org/new"})
+    assert res.status_code == 200
+    assert res.json()["original_url"] == "https://example.org/new"
+
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.headers["location"] == "https://example.org/new"
+
+
+@pytest.mark.asyncio
+async def test_retarget_link_keeps_clicks(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    await client.get(f"/{code}", follow_redirects=False)
+
+    res = await client.patch(f"/api/links/{code}", json={"url": "https://example.org"})
+    assert res.json()["clicks"] == 1
+
+
+@pytest.mark.asyncio
+async def test_retarget_link_rejects_bad_url(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"url": "not a url"})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_retarget_link_not_found(client):
+    res = await client.patch("/api/links/nope", json={"url": "https://example.com"})
+    assert res.status_code == 404

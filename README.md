@@ -136,6 +136,15 @@ Returns a QR code image encoding the short URL. Useful for sharing links in prin
 PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into print or the web.
 `scale` sets the pixel size of each module (1-40, default 10) and `border` the quiet zone width (0-20, default 4).
 
+### Retarget
+
+```http
+PATCH /api/links/{code}
+{ "url": "https://example.org/new" }
+```
+
+Points an existing short link at a new destination while keeping its code, alias, click count and expiry. The URL is validated and normalized like on shorten. Returns the updated stats, 400 on a bad URL, 404 if nothing matches.
+
 ### Delete
 
 ```http

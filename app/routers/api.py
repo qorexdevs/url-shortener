@@ -13,7 +13,13 @@ from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
 from app.queries import find_link, link_expired
-from app.schemas import LinkPreview, LinkStats, ShortenRequest, ShortenResponse
+from app.schemas import (
+    LinkPreview,
+    LinkStats,
+    RetargetRequest,
+    ShortenRequest,
+    ShortenResponse,
+)
 from app.utils import (
     RESERVED_ALIASES,
     generate_short_code,
@@ -168,6 +174,34 @@ async def get_qr_code(
     # the qr image never changes for a code, so let browsers and caches keep it
     headers = {"Cache-Control": "public, max-age=86400"}
     return StreamingResponse(buf, media_type=media_type, headers=headers)
+
+@router.patch("/api/links/{code}", response_model=LinkStats)
+async def retarget_link(
+    code: str, data: RetargetRequest, session: AsyncSession = Depends(get_session)
+):
+    # point an existing short link at a new destination, keeping the code and clicks
+    link = await find_link(session, code)
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    url = data.url.strip()
+    if not validate_url(url):
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    link.original_url = normalize_url(url)
+    await session.commit()
+
+    short_path = link.custom_alias or link.short_code
+    return LinkStats(
+        original_url=link.original_url,
+        short_url=f"{BASE_URL}/{short_path}",
+        short_code=link.short_code,
+        clicks=link.clicks,
+        created_at=link.created_at,
+        last_clicked=link.last_clicked,
+        expires_at=link.expires_at,
+        expired=link_expired(link),
+    )
 
 @router.delete("/api/links/{code}", status_code=204)
 async def delete_link(code: str, session: AsyncSession = Depends(get_session)):

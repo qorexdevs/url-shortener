@@ -13,6 +13,9 @@ class ShortenResponse(BaseModel):
     short_code: str
     expires_at: datetime | None = None
 
+class RetargetRequest(BaseModel):
+    url: str
+
 class LinkPreview(BaseModel):
     short_url: str
     original_url: str
