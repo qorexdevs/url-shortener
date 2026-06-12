@@ -122,7 +122,7 @@ GET /api/preview/{code}
 }
 ```
 
-Resolves where a short link points without following it. No click is counted and there is no redirect, so it is safe for checking a link before opening it.
+Resolves where a short link points without following it. No click is counted and there is no redirect, so it is safe for checking a link before opening it. You can also append `+` to the short link itself (`GET /{code}+`) to get the same preview, the way bitly does.
 
 ### QR Code
 
@@ -147,7 +147,8 @@ Removes a short link by its code or custom alias. Returns 404 if nothing matches
 ### Redirect
 
 ```http
-GET /{code}  ->  307 redirect to original URL
+GET /{code}   ->  307 redirect to original URL
+GET /{code}+  ->  preview the destination instead of following it
 ```
 
 ## Configuration

@@ -179,6 +179,19 @@ async def delete_link(code: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/{code}")
 async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):
+    # bitly-style: a trailing + peeks at the destination instead of following it
+    if code.endswith("+"):
+        link = await find_link(session, code[:-1])
+        if not link:
+            raise HTTPException(status_code=404, detail="Link not found")
+        short_path = link.custom_alias or link.short_code
+        return LinkPreview(
+            short_url=f"{BASE_URL}/{short_path}",
+            original_url=link.original_url,
+            expires_at=link.expires_at,
+            expired=link_expired(link),
+        )
+
     link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")

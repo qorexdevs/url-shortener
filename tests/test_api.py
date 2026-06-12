@@ -255,6 +255,28 @@ async def test_redirect_not_found(client):
 
 
 @pytest.mark.asyncio
+async def test_redirect_plus_peeks_without_counting(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.get(f"/{code}+", follow_redirects=False)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["original_url"] == "https://example.com"
+    assert data["expired"] is False
+
+    res = await client.get(f"/api/stats/{code}")
+    assert res.json()["clicks"] == 0
+    assert res.json()["last_clicked"] is None
+
+
+@pytest.mark.asyncio
+async def test_redirect_plus_not_found(client):
+    res = await client.get("/nope+", follow_redirects=False)
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_stats(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]
