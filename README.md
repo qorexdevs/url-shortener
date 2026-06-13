@@ -153,6 +153,14 @@ DELETE /api/links/{code}  ->  204 No Content
 
 Removes a short link by its code or custom alias. Returns 404 if nothing matches. The code lookup is case-insensitive, same as the other endpoints.
 
+### Purge expired
+
+```http
+DELETE /api/expired  ->  { "deleted": 3 }
+```
+
+Drops every link that's past its ttl in one pass and returns how many were removed. Links without a ttl are left alone. Handy for a cron job or a manual cleanup so expired rows don't pile up.
+
 ### Redirect
 
 ```http

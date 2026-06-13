@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
-from app.queries import find_link, link_expired
+from app.queries import delete_expired, find_link, link_expired
 from app.schemas import (
     LinkPreview,
     LinkStats,
@@ -217,6 +217,12 @@ async def retarget_link(
         expires_at=link.expires_at,
         expired=link_expired(link),
     )
+
+@router.delete("/api/expired")
+async def purge_expired(session: AsyncSession = Depends(get_session)):
+    # drop every link past its ttl in one pass, for a cron or a manual cleanup
+    removed = await delete_expired(session)
+    return {"deleted": removed}
 
 @router.delete("/api/links/{code}", status_code=204)
 async def delete_link(code: str, session: AsyncSession = Depends(get_session)):

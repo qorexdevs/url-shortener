@@ -724,6 +724,35 @@ async def test_delete_link_not_found(client):
 
 
 @pytest.mark.asyncio
+async def test_purge_expired(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+    )
+    expiring = res.json()["short_code"]
+    res = await client.post("/api/shorten", json={"url": "https://example.org"})
+    permanent = res.json()["short_code"]
+
+    future = datetime.now(timezone.utc) + timedelta(hours=2)
+    with patch("app.queries.datetime") as mock_dt:
+        mock_dt.now.return_value = future
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.delete("/api/expired")
+    assert res.status_code == 200
+    assert res.json() == {"deleted": 1}
+
+    assert (await client.get(f"/api/stats/{expiring}")).status_code == 404
+    assert (await client.get(f"/api/stats/{permanent}")).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_purge_expired_none(client):
+    await client.post("/api/shorten", json={"url": "https://example.com"})
+    res = await client.delete("/api/expired")
+    assert res.status_code == 200
+    assert res.json() == {"deleted": 0}
+
+
+@pytest.mark.asyncio
 async def test_retarget_link(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]
