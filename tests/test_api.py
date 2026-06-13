@@ -727,6 +727,25 @@ async def test_list_links_pagination(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_clicks(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    for _ in range(3):
+        await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links?sort=clicks")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    assert urls == ["https://b.example.com", "https://a.example.com", "https://c.example.com"]
+
+    assert (await client.get("/api/links?sort=bogus")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400

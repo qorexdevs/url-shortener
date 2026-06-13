@@ -103,14 +103,17 @@ async def health(session: AsyncSession = Depends(get_session)):
 
 @router.get("/api/links", response_model=list[LinkStats])
 async def list_all_links(
-    limit: int = 50, offset: int = 0, session: AsyncSession = Depends(get_session)
+    limit: int = 50, offset: int = 0, sort: str = "created",
+    session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
         raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
     if offset < 0:
         raise HTTPException(status_code=400, detail="offset must be 0 or greater")
+    if sort not in ("created", "clicks"):
+        raise HTTPException(status_code=400, detail="sort must be 'created' or 'clicks'")
 
-    links = await list_links(session, limit, offset)
+    links = await list_links(session, limit, offset, sort)
     return [
         LinkStats(
             original_url=link.original_url,
