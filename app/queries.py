@@ -18,6 +18,12 @@ async def delete_expired(session: AsyncSession) -> int:
     await session.commit()
     return result.rowcount
 
+async def list_links(session: AsyncSession, limit: int, offset: int) -> list[Link]:
+    result = await session.execute(
+        select(Link).order_by(Link.created_at.desc(), Link.id.desc()).limit(limit).offset(offset)
+    )
+    return list(result.scalars().all())
+
 async def find_link(session: AsyncSession, code: str) -> Link | None:
     code_key = code.lower()
     result = await session.execute(

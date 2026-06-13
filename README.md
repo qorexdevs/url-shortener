@@ -107,6 +107,15 @@ GET /api/stats/{code}
 }
 ```
 
+### List Links
+
+```http
+GET /api/links                    ->  newest first, 50 per page
+GET /api/links?limit=20&offset=40 ->  page through them
+```
+
+Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. 400 on a bad `limit` or a negative `offset`.
+
 ### Preview
 
 ```http

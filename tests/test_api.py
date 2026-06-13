@@ -696,6 +696,48 @@ async def test_stats_page_custom_alias_lookup_case_insensitive(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_empty(client):
+    res = await client.get("/api/links")
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+@pytest.mark.asyncio
+async def test_list_links_newest_first(client):
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        await client.post("/api/shorten", json={"url": url})
+
+    res = await client.get("/api/links")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    assert urls == ["https://c.example.com", "https://b.example.com", "https://a.example.com"]
+
+
+@pytest.mark.asyncio
+async def test_list_links_pagination(client):
+    for i in range(5):
+        await client.post("/api/shorten", json={"url": f"https://example.com/{i}"})
+
+    first = await client.get("/api/links?limit=2&offset=0")
+    second = await client.get("/api/links?limit=2&offset=2")
+    assert len(first.json()) == 2
+    assert len(second.json()) == 2
+    codes = {x["short_code"] for x in first.json()} | {x["short_code"] for x in second.json()}
+    assert len(codes) == 4
+
+
+@pytest.mark.asyncio
+async def test_list_links_rejects_bad_limit(client):
+    assert (await client.get("/api/links?limit=0")).status_code == 400
+    assert (await client.get("/api/links?limit=101")).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_list_links_rejects_negative_offset(client):
+    assert (await client.get("/api/links?offset=-1")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_delete_link(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]

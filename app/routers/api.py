@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
-from app.queries import delete_expired, find_link, link_expired
+from app.queries import delete_expired, find_link, link_expired, list_links
 from app.schemas import (
     LinkPreview,
     LinkStats,
@@ -100,6 +100,30 @@ async def health(session: AsyncSession = Depends(get_session)):
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="database unavailable")
     return {"status": "ok"}
+
+@router.get("/api/links", response_model=list[LinkStats])
+async def list_all_links(
+    limit: int = 50, offset: int = 0, session: AsyncSession = Depends(get_session)
+):
+    if not 1 <= limit <= 100:
+        raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="offset must be 0 or greater")
+
+    links = await list_links(session, limit, offset)
+    return [
+        LinkStats(
+            original_url=link.original_url,
+            short_url=f"{BASE_URL}/{link.custom_alias or link.short_code}",
+            short_code=link.short_code,
+            clicks=link.clicks,
+            created_at=link.created_at,
+            last_clicked=link.last_clicked,
+            expires_at=link.expires_at,
+            expired=link_expired(link),
+        )
+        for link in links
+    ]
 
 @router.get("/api/stats/{code}", response_model=LinkStats)
 async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
