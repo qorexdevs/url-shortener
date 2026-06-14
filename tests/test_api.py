@@ -500,6 +500,21 @@ async def test_link_expires_at_boundary(client):
 
 
 @pytest.mark.asyncio
+async def test_stored_datetimes_are_naive(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+    )
+    code = res.json()["short_code"]
+
+    from app.queries import find_link
+
+    async with db_session_factory() as s:
+        link = await find_link(s, code)
+        assert link.created_at.tzinfo is None
+        assert link.expires_at.tzinfo is None
+
+
+@pytest.mark.asyncio
 async def test_stats_shows_expired(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}

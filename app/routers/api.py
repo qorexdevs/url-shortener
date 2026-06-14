@@ -70,7 +70,9 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
 
     expires_at = None
     if data.ttl_hours is not None:
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)).replace(
+            tzinfo=None
+        )
 
     link = Link(
         original_url=url,
