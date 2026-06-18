@@ -6,12 +6,14 @@ class ShortenRequest(BaseModel):
     url: str
     custom_alias: str | None = None
     ttl_hours: int | None = None
+    permanent: bool = False
 
 class ShortenResponse(BaseModel):
     original_url: str
     short_url: str
     short_code: str
     expires_at: datetime | None = None
+    permanent: bool = False
 
 class RetargetRequest(BaseModel):
     url: str | None = None
@@ -32,3 +34,4 @@ class LinkStats(BaseModel):
     last_clicked: datetime | None = None
     expires_at: datetime | None = None
     expired: bool = False
+    permanent: bool = False

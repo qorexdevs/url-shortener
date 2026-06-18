@@ -23,6 +23,7 @@
 - QR code generation for any link
 - Link preview to see a destination without counting a click
 - Link expiration via `ttl_hours`
+- Permanent (308) redirects opt-in, temporary (307) by default
 - Reserved aliases block route collisions
 - URL validation allows only `http://` and `https://` schemes
 - Async SQLite (aiosqlite)
@@ -71,7 +72,8 @@ Only `http://` and `https://` URLs are accepted, including `localhost` and loopb
 {
   "url": "https://example.com/very/long/url",
   "custom_alias": "my-link",
-  "ttl_hours": 24
+  "ttl_hours": 24,
+  "permanent": false
 }
 ```
 
@@ -82,11 +84,14 @@ Only `http://` and `https://` URLs are accepted, including `localhost` and loopb
   "original_url": "https://example.com/very/long/url",
   "short_url": "http://localhost:8000/my-link",
   "short_code": "my-link",
-  "expires_at": "2025-01-02T00:00:00"
+  "expires_at": "2025-01-02T00:00:00",
+  "permanent": false
 }
 ```
 
-`expires_at` is `null` when no `ttl_hours` was set.
+`expires_at` is `null` when no `ttl_hours` was set. Set `permanent: true` to redirect with a
+cacheable 308 instead of the default 307. Browsers cache it, so later hits skip the server and
+stop counting clicks.
 
 ### Get Link Stats
 
@@ -174,7 +179,7 @@ Drops every link that's past its ttl in one pass and returns how many were remov
 ### Redirect
 
 ```http
-GET /{code}   ->  307 redirect to original URL
+GET /{code}   ->  307 redirect to original URL (308 for a permanent link)
 GET /{code}+  ->  preview the destination instead of following it
 ```
 

@@ -79,6 +79,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         short_code=code,
         custom_alias=alias,
         expires_at=expires_at,
+        permanent=data.permanent,
     )
     session.add(link)
     try:
@@ -93,6 +94,7 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         short_url=f"{BASE_URL}/{code}",
         short_code=code,
         expires_at=expires_at,
+        permanent=link.permanent,
     )
 
 @router.get("/api/health")
@@ -148,6 +150,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         last_clicked=link.last_clicked,
         expires_at=link.expires_at,
         expired=expired,
+        permanent=link.permanent,
     )
 
 @router.get("/api/preview/{code}", response_model=LinkPreview)
@@ -245,6 +248,7 @@ async def retarget_link(
         last_clicked=link.last_clicked,
         expires_at=link.expires_at,
         expired=link_expired(link),
+        permanent=link.permanent,
     )
 
 @router.delete("/api/expired")
@@ -287,4 +291,7 @@ async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session
     link.last_clicked = datetime.now(timezone.utc).replace(tzinfo=None)
     await session.commit()
 
-    return RedirectResponse(url=link.original_url, status_code=307)
+    # 308 lets browsers cache a permanent link, so later hits skip the server and
+    # stop counting clicks. that's the tradeoff you opt into with permanent=true.
+    status = 308 if link.permanent else 307
+    return RedirectResponse(url=link.original_url, status_code=status)

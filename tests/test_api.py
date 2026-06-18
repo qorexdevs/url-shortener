@@ -237,6 +237,31 @@ async def test_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_permanent_link_redirects_with_308(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "permanent": True}
+    )
+    assert res.status_code == 201
+    assert res.json()["permanent"] is True
+    code = res.json()["short_code"]
+
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.status_code == 308
+    assert res.headers["location"] == "https://example.com"
+
+    assert (await client.get(f"/api/stats/{code}")).json()["permanent"] is True
+
+
+@pytest.mark.asyncio
+async def test_links_default_to_temporary_redirect(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.json()["permanent"] is False
+    code = res.json()["short_code"]
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.status_code == 307
+
+
+@pytest.mark.asyncio
 async def test_redirect_short_code_lookup_case_insensitive(client):
     with patch("app.routers.api.generate_short_code", return_value="AbC123"):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})

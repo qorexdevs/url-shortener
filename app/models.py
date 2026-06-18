@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.database import Base
 
@@ -15,3 +15,4 @@ class Link(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     last_clicked = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=True)
+    permanent = Column(Boolean, nullable=False, default=False)
