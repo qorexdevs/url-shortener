@@ -128,6 +128,7 @@ async def list_all_links(
             last_clicked=link.last_clicked,
             expires_at=link.expires_at,
             expired=link_expired(link),
+            permanent=link.permanent,
         )
         for link in links
     ]
