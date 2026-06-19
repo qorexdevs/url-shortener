@@ -786,6 +786,27 @@ async def test_list_links_sort_by_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_status(client):
+    await client.post("/api/shorten", json={"url": "https://live.example.com"})
+    past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+    async with db_session_factory() as session:
+        session.add(
+            Link(original_url="https://dead.example.com", short_code="dead0001",
+                 expires_at=past)
+        )
+        await session.commit()
+
+    active = await client.get("/api/links?status=active")
+    assert [x["original_url"] for x in active.json()] == ["https://live.example.com"]
+
+    expired = await client.get("/api/links?status=expired")
+    assert [x["original_url"] for x in expired.json()] == ["https://dead.example.com"]
+
+    assert len((await client.get("/api/links")).json()) == 2
+    assert (await client.get("/api/links?status=bogus")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400

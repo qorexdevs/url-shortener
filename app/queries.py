@@ -19,11 +19,17 @@ async def delete_expired(session: AsyncSession) -> int:
     return result.rowcount
 
 async def list_links(
-    session: AsyncSession, limit: int, offset: int, sort: str = "created"
+    session: AsyncSession, limit: int, offset: int, sort: str = "created",
+    status: str = "all",
 ) -> list[Link]:
     order = Link.clicks.desc() if sort == "clicks" else Link.created_at.desc()
+    stmt = select(Link)
+    if status != "all":
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        live = Link.expires_at.is_(None) | (Link.expires_at > now)
+        stmt = stmt.where(live if status == "active" else ~live)
     result = await session.execute(
-        select(Link).order_by(order, Link.id.desc()).limit(limit).offset(offset)
+        stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
     )
     return list(result.scalars().all())
 
