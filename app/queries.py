@@ -22,7 +22,12 @@ async def list_links(
     session: AsyncSession, limit: int, offset: int, sort: str = "created",
     status: str = "all", q: str = "",
 ) -> list[Link]:
-    order = Link.clicks.desc() if sort == "clicks" else Link.created_at.desc()
+    if sort == "clicks":
+        order = Link.clicks.desc()
+    elif sort == "recent":
+        order = Link.last_clicked.desc().nulls_last()
+    else:
+        order = Link.created_at.desc()
     stmt = select(Link)
     if status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)

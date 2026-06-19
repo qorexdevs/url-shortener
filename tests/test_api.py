@@ -786,6 +786,25 @@ async def test_list_links_sort_by_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_recent(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    # click b, then a - a is the most recently clicked, c never clicked
+    await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links?sort=recent")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    # clicked ones first, newest click on top, never-clicked sinks to the end
+    assert urls[:2] == ["https://a.example.com", "https://b.example.com"]
+    assert urls[-1] == "https://c.example.com"
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_status(client):
     await client.post("/api/shorten", json={"url": "https://live.example.com"})
     past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
