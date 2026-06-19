@@ -20,7 +20,7 @@ async def delete_expired(session: AsyncSession) -> int:
 
 async def list_links(
     session: AsyncSession, limit: int, offset: int, sort: str = "created",
-    status: str = "all",
+    status: str = "all", q: str = "",
 ) -> list[Link]:
     order = Link.clicks.desc() if sort == "clicks" else Link.created_at.desc()
     stmt = select(Link)
@@ -28,6 +28,13 @@ async def list_links(
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
         stmt = stmt.where(live if status == "active" else ~live)
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            Link.original_url.ilike(like)
+            | Link.short_code.ilike(like)
+            | Link.custom_alias.ilike(like)
+        )
     result = await session.execute(
         stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
     )

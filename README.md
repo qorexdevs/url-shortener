@@ -120,6 +120,7 @@ GET /api/links?limit=20&offset=40 ->  page through them
 GET /api/links?sort=clicks        ->  most clicked first
 GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
+GET /api/links?q=github           ->  match the destination url, code or alias
 ```
 
 Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. `sort` is `created` (default) or `clicks` for the most clicked first. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.

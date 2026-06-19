@@ -807,6 +807,22 @@ async def test_list_links_filter_by_status(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_search(client):
+    await client.post("/api/shorten", json={"url": "https://github.com/qorexdevs"})
+    await client.post("/api/shorten", json={"url": "https://example.com/blog",
+                                            "custom_alias": "myblog"})
+
+    by_url = await client.get("/api/links?q=github")
+    assert [x["original_url"] for x in by_url.json()] == ["https://github.com/qorexdevs"]
+
+    # the alias matches too, case-insensitively
+    by_alias = await client.get("/api/links?q=MYBLOG")
+    assert [x["short_code"] for x in by_alias.json()] == ["myblog"]
+
+    assert (await client.get("/api/links?q=nomatch")).json() == []
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400
