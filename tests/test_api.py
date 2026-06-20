@@ -871,6 +871,16 @@ async def test_list_links_search(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_search_treats_wildcards_literally(client):
+    await client.post("/api/shorten", json={"url": "https://example.com/50%off"})
+    await client.post("/api/shorten", json={"url": "https://example.com/plain"})
+
+    # "%" must match the literal char, not stand in for "anything"
+    hits = await client.get("/api/links?q=50%25")
+    assert [x["original_url"] for x in hits.json()] == ["https://example.com/50%off"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400

@@ -38,11 +38,14 @@ async def list_links(
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
         stmt = stmt.where(live if status == "active" else ~live)
     if q:
-        like = f"%{q}%"
+        # escape LIKE wildcards so a query like "50%" or "a_b" matches literally
+        # instead of standing in for "anything"
+        esc = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        like = f"%{esc}%"
         stmt = stmt.where(
-            Link.original_url.ilike(like)
-            | Link.short_code.ilike(like)
-            | Link.custom_alias.ilike(like)
+            Link.original_url.ilike(like, escape="\\")
+            | Link.short_code.ilike(like, escape="\\")
+            | Link.custom_alias.ilike(like, escape="\\")
         )
     result = await session.execute(
         stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
