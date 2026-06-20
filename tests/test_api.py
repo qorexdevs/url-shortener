@@ -203,6 +203,31 @@ async def test_shorten_allows_loopback_ipv6_url(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_stores_idn_host_as_punycode(client):
+    res = await client.post("/api/shorten", json={"url": "https://пример.рф/path"})
+    assert res.status_code == 201
+    code = res.json()["short_code"]
+    assert res.json()["original_url"] == "https://xn--e1afmkfd.xn--p1ai/path"
+
+    # the redirect Location header is latin-1 only, so it has to be the ascii host
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.headers["location"] == "https://xn--e1afmkfd.xn--p1ai/path"
+
+
+@pytest.mark.asyncio
+async def test_retarget_normalizes_idn_host_to_punycode(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"url": "http://münchen.de:8080/a"})
+    assert res.status_code == 200
+    assert res.json()["original_url"] == "http://xn--mnchen-3ya.de:8080/a"
+
+    res = await client.get(f"/{code}", follow_redirects=False)
+    assert res.headers["location"] == "http://xn--mnchen-3ya.de:8080/a"
+
+
+@pytest.mark.asyncio
 async def test_shorten_invalid_alias(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "ab"}
