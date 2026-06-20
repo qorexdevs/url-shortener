@@ -843,6 +843,18 @@ async def test_list_links_filter_by_status(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_permanent(client):
+    await client.post("/api/shorten", json={"url": "https://temp.example.com"})
+    await client.post(
+        "/api/shorten", json={"url": "https://forever.example.com", "permanent": True}
+    )
+
+    perm = await client.get("/api/links?status=permanent")
+    assert [x["original_url"] for x in perm.json()] == ["https://forever.example.com"]
+    assert all(x["permanent"] for x in perm.json())
+
+
+@pytest.mark.asyncio
 async def test_list_links_search(client):
     await client.post("/api/shorten", json={"url": "https://github.com/qorexdevs"})
     await client.post("/api/shorten", json={"url": "https://example.com/blog",

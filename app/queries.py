@@ -31,7 +31,9 @@ async def list_links(
     else:
         order = Link.created_at.desc()
     stmt = select(Link)
-    if status != "all":
+    if status == "permanent":
+        stmt = stmt.where(Link.permanent.is_(True))
+    elif status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
         stmt = stmt.where(live if status == "active" else ~live)

@@ -122,6 +122,7 @@ GET /api/links?sort=recent        ->  most recently clicked first, never-clicked
 GET /api/links?sort=expiring      ->  soonest to expire first, no-ttl links last
 GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
+GET /api/links?status=permanent   ->  only permanent 308 links
 GET /api/links?q=github           ->  match the destination url, code or alias
 ```
 

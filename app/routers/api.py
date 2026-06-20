@@ -118,8 +118,10 @@ async def list_all_links(
         raise HTTPException(
             status_code=400, detail="sort must be 'created', 'clicks', 'recent' or 'expiring'"
         )
-    if status not in ("all", "active", "expired"):
-        raise HTTPException(status_code=400, detail="status must be 'all', 'active' or 'expired'")
+    if status not in ("all", "active", "expired", "permanent"):
+        raise HTTPException(
+            status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
+        )
 
     links = await list_links(session, limit, offset, sort, status, q.strip())
     return [
