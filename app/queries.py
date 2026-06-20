@@ -26,6 +26,8 @@ async def list_links(
         order = Link.clicks.desc()
     elif sort == "recent":
         order = Link.last_clicked.desc().nulls_last()
+    elif sort == "expiring":
+        order = Link.expires_at.asc().nulls_last()
     else:
         order = Link.created_at.desc()
     stmt = select(Link)

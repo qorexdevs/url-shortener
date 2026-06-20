@@ -119,12 +119,13 @@ GET /api/links                    ->  newest first, 50 per page
 GET /api/links?limit=20&offset=40 ->  page through them
 GET /api/links?sort=clicks        ->  most clicked first
 GET /api/links?sort=recent        ->  most recently clicked first, never-clicked last
+GET /api/links?sort=expiring      ->  soonest to expire first, no-ttl links last
 GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
 GET /api/links?q=github           ->  match the destination url, code or alias
 ```
 
-Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. `sort` is `created` (default), `clicks` for the most clicked first, or `recent` for the most recently clicked first with never-clicked links last. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.
+Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.
 
 ### Preview
 

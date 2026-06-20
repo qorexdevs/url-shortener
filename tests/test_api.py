@@ -805,6 +805,23 @@ async def test_list_links_sort_by_recent(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_expiring(client):
+    await client.post("/api/shorten", json={"url": "https://soon.example.com", "ttl_hours": 1})
+    await client.post("/api/shorten", json={"url": "https://later.example.com", "ttl_hours": 24})
+    await client.post("/api/shorten", json={"url": "https://forever.example.com"})
+
+    res = await client.get("/api/links?sort=expiring")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    # soonest expiry on top, the one with no ttl sinks to the end
+    assert urls == [
+        "https://soon.example.com",
+        "https://later.example.com",
+        "https://forever.example.com",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_status(client):
     await client.post("/api/shorten", json={"url": "https://live.example.com"})
     past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
