@@ -125,7 +125,11 @@ GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
 GET /api/links?status=permanent   ->  only permanent 308 links
 GET /api/links?q=github           ->  match the destination url, code or alias
+GET /api/links.csv                ->  download every matching link as csv
+GET /api/links.csv?status=active&q=github  ->  same status and q filters
 ```
+
+`/api/links.csv` dumps every link matching the same `status` and `q` filters as a csv (no paging), with a `Content-Disposition` so a browser downloads it - handy for a backup or a spreadsheet.
 
 Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. The `X-Total-Count` header carries how many links match the current `status` and `q` filters, so you can size the pager without fetching every page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, `stale` for the least recently clicked first with never-clicked links on top (handy for pruning dead links), or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.
 

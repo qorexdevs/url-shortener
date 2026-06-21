@@ -805,6 +805,35 @@ async def test_list_links_total_count_header(client):
 
 
 @pytest.mark.asyncio
+async def test_export_links_csv(client):
+    for url in ("https://a.example.com", "https://b.example.com"):
+        await client.post("/api/shorten", json={"url": url})
+
+    res = await client.get("/api/links.csv")
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/csv")
+    assert "attachment" in res.headers["content-disposition"]
+    rows = [r for r in res.text.splitlines() if r]
+    assert rows[0].startswith("short_code,short_url,original_url,clicks")
+    assert len(rows) == 3  # header + two links
+    assert "https://a.example.com" in res.text
+
+
+@pytest.mark.asyncio
+async def test_export_links_csv_respects_filter(client):
+    await client.post("/api/shorten", json={"url": "https://github.com/x"})
+    await client.post("/api/shorten", json={"url": "https://example.com/y"})
+
+    res = await client.get("/api/links.csv?q=github")
+    rows = [r for r in res.text.splitlines() if r]
+    assert len(rows) == 2  # header + the one match
+    assert "github" in res.text
+    assert "example.com/y" not in res.text
+
+    assert (await client.get("/api/links.csv?status=bogus")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_sort_by_clicks(client):
     codes = {}
     for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):

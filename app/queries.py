@@ -58,6 +58,12 @@ async def list_links(
     )
     return list(result.scalars().all())
 
+async def all_links(session: AsyncSession, status: str = "all", q: str = "") -> list[Link]:
+    # every matching link, newest first, no pagination - for a full csv export
+    stmt = _filtered(select(Link), status, q).order_by(Link.created_at.desc(), Link.id.desc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
 async def count_links(session: AsyncSession, status: str = "all", q: str = "") -> int:
     stmt = _filtered(select(func.count(Link.id)), status, q)
     return await session.scalar(stmt) or 0

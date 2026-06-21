@@ -1,5 +1,6 @@
+import csv
 from datetime import datetime, timedelta, timezone
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import qrcode
 import qrcode.image.svg as svg
@@ -12,7 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
-from app.queries import count_links, delete_expired, find_link, link_expired, list_links
+from app.queries import (
+    all_links,
+    count_links,
+    delete_expired,
+    find_link,
+    link_expired,
+    list_links,
+)
 from app.schemas import (
     LinkPreview,
     LinkStats,
@@ -143,6 +151,41 @@ async def list_all_links(
         )
         for link in links
     ]
+
+@router.get("/api/links.csv")
+async def export_links_csv(
+    status: str = "all", q: str = "", session: AsyncSession = Depends(get_session)
+):
+    # full export of the matching links as csv, same status/q filters as the list,
+    # no pagination - for a backup or a spreadsheet
+    if status not in ("all", "active", "expired", "permanent"):
+        raise HTTPException(
+            status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
+        )
+    links = await all_links(session, status, q.strip())
+
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "short_code", "short_url", "original_url", "clicks",
+        "created_at", "last_clicked", "expires_at", "expired", "permanent",
+    ])
+    for link in links:
+        short_path = link.custom_alias or link.short_code
+        writer.writerow([
+            link.short_code,
+            f"{BASE_URL}/{short_path}",
+            link.original_url,
+            link.clicks,
+            link.created_at.isoformat() if link.created_at else "",
+            link.last_clicked.isoformat() if link.last_clicked else "",
+            link.expires_at.isoformat() if link.expires_at else "",
+            link_expired(link),
+            link.permanent,
+        ])
+
+    headers = {"Content-Disposition": 'attachment; filename="links.csv"'}
+    return Response(content=buf.getvalue(), media_type="text/csv", headers=headers)
 
 @router.get("/api/stats/{code}", response_model=LinkStats)
 async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
