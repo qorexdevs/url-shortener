@@ -45,6 +45,9 @@ async def list_links(
         order = Link.clicks.desc()
     elif sort == "recent":
         order = Link.last_clicked.desc().nulls_last()
+    elif sort == "stale":
+        # least recently clicked first, never-clicked on top - handy for pruning
+        order = Link.last_clicked.asc().nulls_first()
     elif sort == "expiring":
         order = Link.expires_at.asc().nulls_last()
     else:

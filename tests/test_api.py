@@ -843,6 +843,25 @@ async def test_list_links_sort_by_recent(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_stale(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    # click b, then a - a is freshest, c never clicked so it's the most stale
+    await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links?sort=stale")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    # never-clicked on top, then oldest click, freshest click last
+    assert urls[0] == "https://c.example.com"
+    assert urls[-2:] == ["https://b.example.com", "https://a.example.com"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_sort_by_expiring(client):
     await client.post("/api/shorten", json={"url": "https://soon.example.com", "ttl_hours": 1})
     await client.post("/api/shorten", json={"url": "https://later.example.com", "ttl_hours": 24})

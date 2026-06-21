@@ -115,9 +115,10 @@ async def list_all_links(
         raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
     if offset < 0:
         raise HTTPException(status_code=400, detail="offset must be 0 or greater")
-    if sort not in ("created", "clicks", "recent", "expiring"):
+    if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
-            status_code=400, detail="sort must be 'created', 'clicks', 'recent' or 'expiring'"
+            status_code=400,
+            detail="sort must be 'created', 'clicks', 'recent', 'stale' or 'expiring'",
         )
     if status not in ("all", "active", "expired", "permanent"):
         raise HTTPException(
