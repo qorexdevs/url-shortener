@@ -18,19 +18,7 @@ async def delete_expired(session: AsyncSession) -> int:
     await session.commit()
     return result.rowcount
 
-async def list_links(
-    session: AsyncSession, limit: int, offset: int, sort: str = "created",
-    status: str = "all", q: str = "",
-) -> list[Link]:
-    if sort == "clicks":
-        order = Link.clicks.desc()
-    elif sort == "recent":
-        order = Link.last_clicked.desc().nulls_last()
-    elif sort == "expiring":
-        order = Link.expires_at.asc().nulls_last()
-    else:
-        order = Link.created_at.desc()
-    stmt = select(Link)
+def _filtered(stmt, status: str, q: str):
     if status == "permanent":
         stmt = stmt.where(Link.permanent.is_(True))
     elif status != "all":
@@ -47,10 +35,29 @@ async def list_links(
             | Link.short_code.ilike(like, escape="\\")
             | Link.custom_alias.ilike(like, escape="\\")
         )
+    return stmt
+
+async def list_links(
+    session: AsyncSession, limit: int, offset: int, sort: str = "created",
+    status: str = "all", q: str = "",
+) -> list[Link]:
+    if sort == "clicks":
+        order = Link.clicks.desc()
+    elif sort == "recent":
+        order = Link.last_clicked.desc().nulls_last()
+    elif sort == "expiring":
+        order = Link.expires_at.asc().nulls_last()
+    else:
+        order = Link.created_at.desc()
+    stmt = _filtered(select(Link), status, q)
     result = await session.execute(
         stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
     )
     return list(result.scalars().all())
+
+async def count_links(session: AsyncSession, status: str = "all", q: str = "") -> int:
+    stmt = _filtered(select(func.count(Link.id)), status, q)
+    return await session.scalar(stmt) or 0
 
 async def find_link(session: AsyncSession, code: str) -> Link | None:
     code_key = code.lower()

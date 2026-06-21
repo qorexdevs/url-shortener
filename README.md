@@ -126,7 +126,7 @@ GET /api/links?status=permanent   ->  only permanent 308 links
 GET /api/links?q=github           ->  match the destination url, code or alias
 ```
 
-Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.
+Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. The `X-Total-Count` header carries how many links match the current `status` and `q` filters, so you can size the pager without fetching every page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, or an unknown `status`.
 
 ### Preview
 

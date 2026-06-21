@@ -792,6 +792,19 @@ async def test_list_links_pagination(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_total_count_header(client):
+    for i in range(5):
+        await client.post("/api/shorten", json={"url": f"https://example.com/{i}"})
+
+    res = await client.get("/api/links?limit=2")
+    assert len(res.json()) == 2
+    assert res.headers["X-Total-Count"] == "5"
+
+    res = await client.get("/api/links?q=example.com/3")
+    assert res.headers["X-Total-Count"] == "1"
+
+
+@pytest.mark.asyncio
 async def test_list_links_sort_by_clicks(client):
     codes = {}
     for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):

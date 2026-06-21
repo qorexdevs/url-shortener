@@ -3,7 +3,7 @@ from io import BytesIO
 
 import qrcode
 import qrcode.image.svg as svg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
-from app.queries import delete_expired, find_link, link_expired, list_links
+from app.queries import count_links, delete_expired, find_link, link_expired, list_links
 from app.schemas import (
     LinkPreview,
     LinkStats,
@@ -107,6 +107,7 @@ async def health(session: AsyncSession = Depends(get_session)):
 
 @router.get("/api/links", response_model=list[LinkStats])
 async def list_all_links(
+    response: Response,
     limit: int = 50, offset: int = 0, sort: str = "created", status: str = "all",
     q: str = "", session: AsyncSession = Depends(get_session),
 ):
@@ -123,7 +124,10 @@ async def list_all_links(
             status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
         )
 
-    links = await list_links(session, limit, offset, sort, status, q.strip())
+    q = q.strip()
+    # total matching the same filters, so a client can page without guessing
+    response.headers["X-Total-Count"] = str(await count_links(session, status, q))
+    links = await list_links(session, limit, offset, sort, status, q)
     return [
         LinkStats(
             original_url=link.original_url,
