@@ -117,12 +117,14 @@ async def health(session: AsyncSession = Depends(get_session)):
 async def list_all_links(
     response: Response,
     limit: int = 50, offset: int = 0, sort: str = "created", status: str = "all",
-    q: str = "", session: AsyncSession = Depends(get_session),
+    q: str = "", min_clicks: int = 0, session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
         raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
     if offset < 0:
         raise HTTPException(status_code=400, detail="offset must be 0 or greater")
+    if min_clicks < 0:
+        raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
     if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
             status_code=400,
@@ -135,8 +137,8 @@ async def list_all_links(
 
     q = q.strip()
     # total matching the same filters, so a client can page without guessing
-    response.headers["X-Total-Count"] = str(await count_links(session, status, q))
-    links = await list_links(session, limit, offset, sort, status, q)
+    response.headers["X-Total-Count"] = str(await count_links(session, status, q, min_clicks))
+    links = await list_links(session, limit, offset, sort, status, q, min_clicks)
     return [
         LinkStats(
             original_url=link.original_url,
@@ -154,15 +156,18 @@ async def list_all_links(
 
 @router.get("/api/links.csv")
 async def export_links_csv(
-    status: str = "all", q: str = "", session: AsyncSession = Depends(get_session)
+    status: str = "all", q: str = "", min_clicks: int = 0,
+    session: AsyncSession = Depends(get_session),
 ):
-    # full export of the matching links as csv, same status/q filters as the list,
-    # no pagination - for a backup or a spreadsheet
+    # full export of the matching links as csv, same status/q/min_clicks filters as
+    # the list, no pagination - for a backup or a spreadsheet
     if status not in ("all", "active", "expired", "permanent"):
         raise HTTPException(
             status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
         )
-    links = await all_links(session, status, q.strip())
+    if min_clicks < 0:
+        raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
+    links = await all_links(session, status, q.strip(), min_clicks)
 
     buf = StringIO()
     writer = csv.writer(buf)

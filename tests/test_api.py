@@ -967,6 +967,27 @@ async def test_list_links_search_treats_wildcards_literally(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_min_clicks(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    for _ in range(3):
+        await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links?min_clicks=2")
+    assert res.status_code == 200
+    assert [x["original_url"] for x in res.json()] == ["https://a.example.com"]
+    assert res.headers["X-Total-Count"] == "1"
+
+    # min_clicks=0 is the default and keeps every link, never-clicked included
+    assert len((await client.get("/api/links?min_clicks=0")).json()) == 3
+    assert (await client.get("/api/links?min_clicks=-1")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400
