@@ -117,7 +117,8 @@ async def health(session: AsyncSession = Depends(get_session)):
 async def list_all_links(
     response: Response,
     limit: int = 50, offset: int = 0, sort: str = "created", status: str = "all",
-    q: str = "", min_clicks: int = 0, session: AsyncSession = Depends(get_session),
+    q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
+    session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
         raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
@@ -125,6 +126,8 @@ async def list_all_links(
         raise HTTPException(status_code=400, detail="offset must be 0 or greater")
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
+    if max_clicks is not None and max_clicks < 0:
+        raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
     if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
             status_code=400,
@@ -137,8 +140,10 @@ async def list_all_links(
 
     q = q.strip()
     # total matching the same filters, so a client can page without guessing
-    response.headers["X-Total-Count"] = str(await count_links(session, status, q, min_clicks))
-    links = await list_links(session, limit, offset, sort, status, q, min_clicks)
+    response.headers["X-Total-Count"] = str(
+        await count_links(session, status, q, min_clicks, max_clicks)
+    )
+    links = await list_links(session, limit, offset, sort, status, q, min_clicks, max_clicks)
     return [
         LinkStats(
             original_url=link.original_url,
@@ -156,7 +161,7 @@ async def list_all_links(
 
 @router.get("/api/links.csv")
 async def export_links_csv(
-    status: str = "all", q: str = "", min_clicks: int = 0,
+    status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     # full export of the matching links as csv, same status/q/min_clicks filters as
@@ -167,7 +172,9 @@ async def export_links_csv(
         )
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
-    links = await all_links(session, status, q.strip(), min_clicks)
+    if max_clicks is not None and max_clicks < 0:
+        raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
+    links = await all_links(session, status, q.strip(), min_clicks, max_clicks)
 
     buf = StringIO()
     writer = csv.writer(buf)

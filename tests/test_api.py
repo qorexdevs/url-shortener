@@ -988,6 +988,37 @@ async def test_list_links_filter_by_min_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_max_clicks(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    for _ in range(3):
+        await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+
+    # low-traffic links for pruning: b has 1 click, c has none
+    res = await client.get("/api/links?max_clicks=1")
+    assert res.status_code == 200
+    assert sorted(x["original_url"] for x in res.json()) == [
+        "https://b.example.com", "https://c.example.com",
+    ]
+    assert res.headers["X-Total-Count"] == "2"
+
+    # pairs with min_clicks for an exact range
+    res = await client.get("/api/links?min_clicks=1&max_clicks=1")
+    assert [x["original_url"] for x in res.json()] == ["https://b.example.com"]
+
+    # max_clicks=0 keeps only never-clicked links, default is unbounded
+    assert [x["original_url"] for x in (await client.get("/api/links?max_clicks=0")).json()] == [
+        "https://c.example.com",
+    ]
+    assert len((await client.get("/api/links")).json()) == 3
+    assert (await client.get("/api/links?max_clicks=-1")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400

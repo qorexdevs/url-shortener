@@ -18,7 +18,7 @@ async def delete_expired(session: AsyncSession) -> int:
     await session.commit()
     return result.rowcount
 
-def _filtered(stmt, status: str, q: str, min_clicks: int = 0):
+def _filtered(stmt, status: str, q: str, min_clicks: int = 0, max_clicks: int | None = None):
     if status == "permanent":
         stmt = stmt.where(Link.permanent.is_(True))
     elif status != "all":
@@ -27,6 +27,8 @@ def _filtered(stmt, status: str, q: str, min_clicks: int = 0):
         stmt = stmt.where(live if status == "active" else ~live)
     if min_clicks:
         stmt = stmt.where(Link.clicks >= min_clicks)
+    if max_clicks is not None:
+        stmt = stmt.where(Link.clicks <= max_clicks)
     if q:
         # escape LIKE wildcards so a query like "50%" or "a_b" matches literally
         # instead of standing in for "anything"
@@ -41,7 +43,7 @@ def _filtered(stmt, status: str, q: str, min_clicks: int = 0):
 
 async def list_links(
     session: AsyncSession, limit: int, offset: int, sort: str = "created",
-    status: str = "all", q: str = "", min_clicks: int = 0,
+    status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
 ) -> list[Link]:
     if sort == "clicks":
         order = Link.clicks.desc()
@@ -54,26 +56,28 @@ async def list_links(
         order = Link.expires_at.asc().nulls_last()
     else:
         order = Link.created_at.desc()
-    stmt = _filtered(select(Link), status, q, min_clicks)
+    stmt = _filtered(select(Link), status, q, min_clicks, max_clicks)
     result = await session.execute(
         stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
     )
     return list(result.scalars().all())
 
 async def all_links(
-    session: AsyncSession, status: str = "all", q: str = "", min_clicks: int = 0
+    session: AsyncSession, status: str = "all", q: str = "", min_clicks: int = 0,
+    max_clicks: int | None = None,
 ) -> list[Link]:
     # every matching link, newest first, no pagination - for a full csv export
-    stmt = _filtered(select(Link), status, q, min_clicks).order_by(
+    stmt = _filtered(select(Link), status, q, min_clicks, max_clicks).order_by(
         Link.created_at.desc(), Link.id.desc()
     )
     result = await session.execute(stmt)
     return list(result.scalars().all())
 
 async def count_links(
-    session: AsyncSession, status: str = "all", q: str = "", min_clicks: int = 0
+    session: AsyncSession, status: str = "all", q: str = "", min_clicks: int = 0,
+    max_clicks: int | None = None,
 ) -> int:
-    stmt = _filtered(select(func.count(Link.id)), status, q, min_clicks)
+    stmt = _filtered(select(func.count(Link.id)), status, q, min_clicks, max_clicks)
     return await session.scalar(stmt) or 0
 
 async def find_link(session: AsyncSession, code: str) -> Link | None:
