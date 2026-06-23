@@ -127,11 +127,15 @@ GET /api/links?status=permanent   ->  only permanent 308 links
 GET /api/links?q=github           ->  match the destination url, code or alias
 GET /api/links?min_clicks=10      ->  only links with at least that many clicks
 GET /api/links?max_clicks=1       ->  only links with at most that many clicks
+GET /api/links?created_after=2026-01-01   ->  only links created on/after a date
+GET /api/links?created_before=2026-06-01  ->  only links created on/before a date
 GET /api/links.csv                ->  download every matching link as csv
 GET /api/links.csv?status=active&q=github  ->  same status and q filters
 ```
 
-`/api/links.csv` dumps every link matching the same `status`, `q`, `min_clicks` and `max_clicks` filters as a csv (no paging), with a `Content-Disposition` so a browser downloads it - handy for a backup or a spreadsheet.
+`created_after` and `created_before` take an ISO date or datetime (a tz-aware value is converted to UTC) and pair into a window, so `created_before=2026-01-01` finds old links to prune.
+
+`/api/links.csv` dumps every link matching the same `status`, `q`, `min_clicks`, `max_clicks` and `created_after`/`created_before` filters as a csv (no paging), with a `Content-Disposition` so a browser downloads it - handy for a backup or a spreadsheet.
 
 Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. The `X-Total-Count` header carries how many links match the current `status` and `q` filters, so you can size the pager without fetching every page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, `stale` for the least recently clicked first with never-clicked links on top (handy for pruning dead links), or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. `min_clicks` keeps only links with at least that many clicks (default 0, so everything) and `max_clicks` keeps only links with at most that many (default unbounded), so `min_clicks=1&max_clicks=1` is an exact range and `max_clicks=0` finds never-clicked links to prune. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, an unknown `status`, a negative `min_clicks`, or a negative `max_clicks`.
 

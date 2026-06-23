@@ -1019,6 +1019,37 @@ async def test_list_links_filter_by_max_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_created_range(client):
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        await client.post("/api/shorten", json={"url": url})
+
+    # everything was created just now, so a far-past floor keeps all of it
+    res = await client.get("/api/links?created_after=2000-01-01")
+    assert res.status_code == 200
+    assert res.headers["X-Total-Count"] == "3"
+    # a future floor drops everything, a future ceiling keeps everything
+    assert len((await client.get("/api/links?created_after=2999-01-01")).json()) == 0
+    assert len((await client.get("/api/links?created_before=2999-01-01")).json()) == 3
+    assert len((await client.get("/api/links?created_before=2000-01-01")).json()) == 0
+    # bounds pair into a window, and a tz-aware value is accepted
+    res = await client.get(
+        "/api/links?created_after=2000-01-01T00:00:00%2B00:00&created_before=2999-01-01"
+    )
+    assert res.headers["X-Total-Count"] == "3"
+    assert (await client.get("/api/links?created_after=nope")).status_code == 400
+    assert (await client.get("/api/links?created_before=2026-13-40")).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_export_csv_filter_by_created_range(client):
+    await client.post("/api/shorten", json={"url": "https://a.example.com"})
+    res = await client.get("/api/links.csv?created_after=2999-01-01")
+    assert res.status_code == 200
+    assert len(res.text.strip().splitlines()) == 1  # header only
+    assert (await client.get("/api/links.csv?created_after=nope")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_list_links_rejects_bad_limit(client):
     assert (await client.get("/api/links?limit=0")).status_code == 400
     assert (await client.get("/api/links?limit=101")).status_code == 400

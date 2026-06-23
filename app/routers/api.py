@@ -38,6 +38,18 @@ from app.utils import (
 
 router = APIRouter()
 
+def _parse_created(value: str, field: str) -> datetime | None:
+    # accept an ISO date or datetime, store as naive utc to match Link.created_at
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{field} must be an ISO date")
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
 @router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
 async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_session)):
     url = data.url.strip()
@@ -118,6 +130,7 @@ async def list_all_links(
     response: Response,
     limit: int = 50, offset: int = 0, sort: str = "created", status: str = "all",
     q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
+    created_after: str = "", created_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
@@ -128,6 +141,8 @@ async def list_all_links(
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
     if max_clicks is not None and max_clicks < 0:
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
+    after = _parse_created(created_after, "created_after")
+    before = _parse_created(created_before, "created_before")
     if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
             status_code=400,
@@ -141,9 +156,11 @@ async def list_all_links(
     q = q.strip()
     # total matching the same filters, so a client can page without guessing
     response.headers["X-Total-Count"] = str(
-        await count_links(session, status, q, min_clicks, max_clicks)
+        await count_links(session, status, q, min_clicks, max_clicks, after, before)
     )
-    links = await list_links(session, limit, offset, sort, status, q, min_clicks, max_clicks)
+    links = await list_links(
+        session, limit, offset, sort, status, q, min_clicks, max_clicks, after, before
+    )
     return [
         LinkStats(
             original_url=link.original_url,
@@ -162,6 +179,7 @@ async def list_all_links(
 @router.get("/api/links.csv")
 async def export_links_csv(
     status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
+    created_after: str = "", created_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     # full export of the matching links as csv, same status/q/min_clicks filters as
@@ -174,7 +192,9 @@ async def export_links_csv(
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
     if max_clicks is not None and max_clicks < 0:
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
-    links = await all_links(session, status, q.strip(), min_clicks, max_clicks)
+    after = _parse_created(created_after, "created_after")
+    before = _parse_created(created_before, "created_before")
+    links = await all_links(session, status, q.strip(), min_clicks, max_clicks, after, before)
 
     buf = StringIO()
     writer = csv.writer(buf)
