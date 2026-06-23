@@ -131,6 +131,7 @@ async def list_all_links(
     limit: int = 50, offset: int = 0, sort: str = "created", status: str = "all",
     q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
     created_after: str = "", created_before: str = "",
+    clicked_after: str = "", clicked_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
@@ -143,6 +144,8 @@ async def list_all_links(
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
     after = _parse_created(created_after, "created_after")
     before = _parse_created(created_before, "created_before")
+    clicked_aft = _parse_created(clicked_after, "clicked_after")
+    clicked_bef = _parse_created(clicked_before, "clicked_before")
     if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
             status_code=400,
@@ -156,10 +159,14 @@ async def list_all_links(
     q = q.strip()
     # total matching the same filters, so a client can page without guessing
     response.headers["X-Total-Count"] = str(
-        await count_links(session, status, q, min_clicks, max_clicks, after, before)
+        await count_links(
+            session, status, q, min_clicks, max_clicks, after, before,
+            clicked_aft, clicked_bef,
+        )
     )
     links = await list_links(
-        session, limit, offset, sort, status, q, min_clicks, max_clicks, after, before
+        session, limit, offset, sort, status, q, min_clicks, max_clicks, after, before,
+        clicked_aft, clicked_bef,
     )
     return [
         LinkStats(
@@ -180,6 +187,7 @@ async def list_all_links(
 async def export_links_csv(
     status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
     created_after: str = "", created_before: str = "",
+    clicked_after: str = "", clicked_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     # full export of the matching links as csv, same status/q/min_clicks filters as
@@ -194,7 +202,12 @@ async def export_links_csv(
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
     after = _parse_created(created_after, "created_after")
     before = _parse_created(created_before, "created_before")
-    links = await all_links(session, status, q.strip(), min_clicks, max_clicks, after, before)
+    clicked_aft = _parse_created(clicked_after, "clicked_after")
+    clicked_bef = _parse_created(clicked_before, "clicked_before")
+    links = await all_links(
+        session, status, q.strip(), min_clicks, max_clicks, after, before,
+        clicked_aft, clicked_bef,
+    )
 
     buf = StringIO()
     writer = csv.writer(buf)

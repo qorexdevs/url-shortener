@@ -1041,12 +1041,37 @@ async def test_list_links_filter_by_created_range(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_clicked_range(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    # click a and b, leave c never-clicked
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+
+    # a far-past floor keeps both clicked links but never drops in the never-clicked c
+    res = await client.get("/api/links?clicked_after=2000-01-01")
+    assert res.status_code == 200
+    assert res.headers["X-Total-Count"] == "2"
+    urls = {item["original_url"] for item in res.json()}
+    assert urls == {"https://a.example.com", "https://b.example.com"}
+    # a future floor drops everything, a future ceiling keeps the two clicked ones
+    assert len((await client.get("/api/links?clicked_after=2999-01-01")).json()) == 0
+    assert len((await client.get("/api/links?clicked_before=2999-01-01")).json()) == 2
+    assert len((await client.get("/api/links?clicked_before=2000-01-01")).json()) == 0
+    assert (await client.get("/api/links?clicked_after=nope")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_export_csv_filter_by_created_range(client):
     await client.post("/api/shorten", json={"url": "https://a.example.com"})
     res = await client.get("/api/links.csv?created_after=2999-01-01")
     assert res.status_code == 200
     assert len(res.text.strip().splitlines()) == 1  # header only
     assert (await client.get("/api/links.csv?created_after=nope")).status_code == 400
+    assert (await client.get("/api/links.csv?clicked_after=nope")).status_code == 400
 
 
 @pytest.mark.asyncio
