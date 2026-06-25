@@ -131,13 +131,15 @@ GET /api/links?created_after=2026-01-01   ->  only links created on/after a date
 GET /api/links?created_before=2026-06-01  ->  only links created on/before a date
 GET /api/links?clicked_after=2026-01-01   ->  only links last clicked on/after a date
 GET /api/links?clicked_before=2026-06-01  ->  only links last clicked on/before a date
+GET /api/links?expires_after=2026-01-01   ->  only links expiring on/after a date
+GET /api/links?expires_before=2026-06-01  ->  only links expiring on/before a date
 GET /api/links.csv                ->  download every matching link as csv
 GET /api/links.csv?status=active&q=github  ->  same status and q filters
 ```
 
-`created_after` and `created_before` take an ISO date or datetime (a tz-aware value is converted to UTC) and pair into a window, so `created_before=2026-01-01` finds old links to prune. `clicked_after` and `clicked_before` work the same way against `last_clicked`, so `clicked_before=2026-01-01` surfaces links nobody has followed in a while - never-clicked links have no click date and drop out of either bound.
+`created_after` and `created_before` take an ISO date or datetime (a tz-aware value is converted to UTC) and pair into a window, so `created_before=2026-01-01` finds old links to prune. `clicked_after` and `clicked_before` work the same way against `last_clicked`, so `clicked_before=2026-01-01` surfaces links nobody has followed in a while - never-clicked links have no click date and drop out of either bound. `expires_after` and `expires_before` work the same way against `expires_at`, so `expires_before=2026-06-01` finds links about to lapse - links with no ttl never expire and drop out of either bound.
 
-`/api/links.csv` dumps every link matching the same `status`, `q`, `min_clicks`, `max_clicks`, `created_after`/`created_before` and `clicked_after`/`clicked_before` filters as a csv (no paging), with a `Content-Disposition` so a browser downloads it - handy for a backup or a spreadsheet.
+`/api/links.csv` dumps every link matching the same `status`, `q`, `min_clicks`, `max_clicks`, `created_after`/`created_before`, `clicked_after`/`clicked_before` and `expires_after`/`expires_before` filters as a csv (no paging), with a `Content-Disposition` so a browser downloads it - handy for a backup or a spreadsheet.
 
 Returns every link with the same fields as stats, newest first. `limit` is 1-100 (default 50) and `offset` skips that many rows, so `offset=limit` gets the next page. The `X-Total-Count` header carries how many links match the current `status` and `q` filters, so you can size the pager without fetching every page. `sort` is `created` (default), `clicks` for the most clicked first, `recent` for the most recently clicked first with never-clicked links last, `stale` for the least recently clicked first with never-clicked links on top (handy for pruning dead links), or `expiring` for the soonest to expire first with no-ttl links last. `status` is `all` (default), `active`, or `expired`. `min_clicks` keeps only links with at least that many clicks (default 0, so everything) and `max_clicks` keeps only links with at most that many (default unbounded), so `min_clicks=1&max_clicks=1` is an exact range and `max_clicks=0` finds never-clicked links to prune. 400 on a bad `limit`, a negative `offset`, an unknown `sort`, an unknown `status`, a negative `min_clicks`, or a negative `max_clicks`.
 

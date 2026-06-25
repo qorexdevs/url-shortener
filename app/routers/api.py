@@ -132,6 +132,7 @@ async def list_all_links(
     q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
     created_after: str = "", created_before: str = "",
     clicked_after: str = "", clicked_before: str = "",
+    expires_after: str = "", expires_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     if not 1 <= limit <= 100:
@@ -146,6 +147,8 @@ async def list_all_links(
     before = _parse_created(created_before, "created_before")
     clicked_aft = _parse_created(clicked_after, "clicked_after")
     clicked_bef = _parse_created(clicked_before, "clicked_before")
+    expires_aft = _parse_created(expires_after, "expires_after")
+    expires_bef = _parse_created(expires_before, "expires_before")
     if sort not in ("created", "clicks", "recent", "stale", "expiring"):
         raise HTTPException(
             status_code=400,
@@ -161,12 +164,12 @@ async def list_all_links(
     response.headers["X-Total-Count"] = str(
         await count_links(
             session, status, q, min_clicks, max_clicks, after, before,
-            clicked_aft, clicked_bef,
+            clicked_aft, clicked_bef, expires_aft, expires_bef,
         )
     )
     links = await list_links(
         session, limit, offset, sort, status, q, min_clicks, max_clicks, after, before,
-        clicked_aft, clicked_bef,
+        clicked_aft, clicked_bef, expires_aft, expires_bef,
     )
     return [
         LinkStats(
@@ -188,6 +191,7 @@ async def export_links_csv(
     status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
     created_after: str = "", created_before: str = "",
     clicked_after: str = "", clicked_before: str = "",
+    expires_after: str = "", expires_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
     # full export of the matching links as csv, same status/q/min_clicks filters as
@@ -204,9 +208,11 @@ async def export_links_csv(
     before = _parse_created(created_before, "created_before")
     clicked_aft = _parse_created(clicked_after, "clicked_after")
     clicked_bef = _parse_created(clicked_before, "clicked_before")
+    expires_aft = _parse_created(expires_after, "expires_after")
+    expires_bef = _parse_created(expires_before, "expires_before")
     links = await all_links(
         session, status, q.strip(), min_clicks, max_clicks, after, before,
-        clicked_aft, clicked_bef,
+        clicked_aft, clicked_bef, expires_aft, expires_bef,
     )
 
     buf = StringIO()

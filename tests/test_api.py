@@ -1065,6 +1065,23 @@ async def test_list_links_filter_by_clicked_range(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_expires_range(client):
+    # a expires in the future, b never expires (no ttl)
+    await client.post("/api/shorten", json={"url": "https://a.example.com", "ttl_hours": 24})
+    await client.post("/api/shorten", json={"url": "https://b.example.com"})
+
+    # a past floor keeps the expiring link but drops the never-expiring one
+    res = await client.get("/api/links?expires_after=2000-01-01")
+    assert res.status_code == 200
+    assert res.headers["X-Total-Count"] == "1"
+    assert {item["original_url"] for item in res.json()} == {"https://a.example.com"}
+    # a far-future ceiling keeps the expiring link, a far-future floor drops everything
+    assert len((await client.get("/api/links?expires_before=2999-01-01")).json()) == 1
+    assert len((await client.get("/api/links?expires_after=2999-01-01")).json()) == 0
+    assert (await client.get("/api/links?expires_after=nope")).status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_export_csv_filter_by_created_range(client):
     await client.post("/api/shorten", json={"url": "https://a.example.com"})
     res = await client.get("/api/links.csv?created_after=2999-01-01")
