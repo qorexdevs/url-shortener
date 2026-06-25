@@ -142,6 +142,19 @@ async def summary_stats(session: AsyncSession) -> dict:
         "permanent": permanent,
     }
 
+async def find_live_by_url(session: AsyncSession, url: str) -> Link | None:
+    # newest link still pointing at url that has not expired, for reuse on shorten.
+    # custom aliases are skipped so reuse never hands back someone's named link.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    live = Link.expires_at.is_(None) | (Link.expires_at > now)
+    result = await session.execute(
+        select(Link)
+        .where(Link.original_url == url, Link.custom_alias.is_(None), live)
+        .order_by(Link.created_at.desc(), Link.id.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
 async def find_link(session: AsyncSession, code: str) -> Link | None:
     code_key = code.lower()
     result = await session.execute(

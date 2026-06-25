@@ -1452,3 +1452,68 @@ async def test_summary_counts(client):
     assert res.json() == {
         "total_links": 3, "total_clicks": 10, "active": 1, "expired": 1, "permanent": 1,
     }
+
+
+@pytest.mark.asyncio
+async def test_shorten_reuse_returns_same_code(client):
+    first = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    assert first.json()["reused"] is False
+    code = first.json()["short_code"]
+
+    second = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    assert second.json()["short_code"] == code
+    assert second.json()["reused"] is True
+
+
+@pytest.mark.asyncio
+async def test_shorten_without_reuse_makes_new_code(client):
+    first = await client.post("/api/shorten", json={"url": "https://example.com"})
+    second = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert first.json()["short_code"] != second.json()["short_code"]
+
+
+@pytest.mark.asyncio
+async def test_shorten_reuse_matches_trimmed_url(client):
+    first = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    code = first.json()["short_code"]
+
+    second = await client.post(
+        "/api/shorten", json={"url": "  https://example.com  ", "reuse": True}
+    )
+    assert second.json()["short_code"] == code
+    assert second.json()["reused"] is True
+
+
+@pytest.mark.asyncio
+async def test_shorten_reuse_skips_custom_alias(client):
+    await client.post(
+        "/api/shorten",
+        json={"url": "https://example.com", "custom_alias": "named", "reuse": True},
+    )
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    assert res.json()["short_code"] != "named"
+    assert res.json()["reused"] is False
+
+
+@pytest.mark.asyncio
+async def test_shorten_reuse_ignores_expired_link(client):
+    past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+    async with db_session_factory() as session:
+        session.add(
+            Link(original_url="https://example.com", short_code="exp00001", expires_at=past)
+        )
+        await session.commit()
+
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    assert res.json()["short_code"] != "exp00001"
+    assert res.json()["reused"] is False

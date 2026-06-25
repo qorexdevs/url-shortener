@@ -26,6 +26,7 @@
 - Link preview to see a destination without counting a click
 - Link expiration via `ttl_hours`
 - Permanent (308) redirects opt-in, temporary (307) by default
+- Idempotent shorten with `reuse` to dedupe the same URL
 - Reserved aliases block route collisions
 - URL validation allows only `http://` and `https://` schemes
 - Async SQLite (aiosqlite)
@@ -94,6 +95,11 @@ Only `http://` and `https://` URLs are accepted, including `localhost` and loopb
 `expires_at` is `null` when no `ttl_hours` was set. Set `permanent: true` to redirect with a
 cacheable 308 instead of the default 307. Browsers cache it, so later hits skip the server and
 stop counting clicks.
+
+Set `reuse: true` to get back an existing live link for the same URL instead of minting a new
+code, so shortening the same URL twice stays idempotent. The response carries `reused: true` on a
+hit. A `custom_alias` always makes a fresh link, and `ttl_hours`/`permanent` are ignored when an
+existing link is returned.
 
 ### Shorten in bulk
 

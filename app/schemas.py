@@ -7,6 +7,7 @@ class ShortenRequest(BaseModel):
     custom_alias: str | None = None
     ttl_hours: int | None = None
     permanent: bool = False
+    reuse: bool = False
 
 class ShortenResponse(BaseModel):
     original_url: str
@@ -14,6 +15,7 @@ class ShortenResponse(BaseModel):
     short_code: str
     expires_at: datetime | None = None
     permanent: bool = False
+    reused: bool = False
 
 class BulkShortenRequest(BaseModel):
     urls: list[ShortenRequest]

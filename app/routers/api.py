@@ -18,6 +18,7 @@ from app.queries import (
     count_links,
     delete_expired,
     find_link,
+    find_live_by_url,
     link_expired,
     list_links,
     summary_stats,
@@ -64,6 +65,22 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
     if not validate_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
     url = normalize_url(url)
+
+    # reuse hands back an existing live link for the same url instead of minting a
+    # new code, so calling shorten twice stays idempotent. a custom alias always
+    # makes a fresh link, and ttl/permanent on the request are ignored on a hit.
+    if data.reuse and alias is None:
+        existing = await find_live_by_url(session, url)
+        if existing:
+            short_path = existing.custom_alias or existing.short_code
+            return ShortenResponse(
+                original_url=existing.original_url,
+                short_url=f"{BASE_URL}/{short_path}",
+                short_code=existing.short_code,
+                expires_at=existing.expires_at,
+                permanent=existing.permanent,
+                reused=True,
+            )
 
     if data.ttl_hours is not None and data.ttl_hours <= 0:
         raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
