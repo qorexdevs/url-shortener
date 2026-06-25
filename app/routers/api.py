@@ -4,7 +4,7 @@ from io import BytesIO, StringIO
 
 import qrcode
 import qrcode.image.svg as svg
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -374,8 +374,10 @@ async def delete_link(code: str, session: AsyncSession = Depends(get_session)):
     await session.delete(link)
     await session.commit()
 
-@router.get("/{code}")
-async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session)):
+@router.api_route("/{code}", methods=["GET", "HEAD"])
+async def redirect_to_url(
+    code: str, request: Request, session: AsyncSession = Depends(get_session)
+):
     # bitly-style: a trailing + peeks at the destination instead of following it
     if code.endswith("+"):
         link = await find_link(session, code[:-1])
@@ -396,9 +398,12 @@ async def redirect_to_url(code: str, session: AsyncSession = Depends(get_session
     if link_expired(link):
         raise HTTPException(status_code=410, detail="Link has expired")
 
-    link.clicks += 1
-    link.last_clicked = datetime.now(timezone.utc).replace(tzinfo=None)
-    await session.commit()
+    # HEAD is how link checkers and unfurlers probe a link without visiting it, so
+    # don't count it as a click. the redirect headers still come back.
+    if request.method != "HEAD":
+        link.clicks += 1
+        link.last_clicked = datetime.now(timezone.utc).replace(tzinfo=None)
+        await session.commit()
 
     # 308 lets browsers cache a permanent link, so later hits skip the server and
     # stop counting clicks. that's the tradeoff you opt into with permanent=true.

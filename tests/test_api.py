@@ -419,6 +419,21 @@ async def test_redirect_increments_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_head_redirect_does_not_count_as_click(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    head = await client.head(f"/{code}", follow_redirects=False)
+    assert head.status_code == 307
+    assert head.headers["location"] == "https://example.com"
+
+    # head probed the link, a real get still counts
+    assert (await client.get(f"/api/stats/{code}")).json()["clicks"] == 0
+    await client.get(f"/{code}", follow_redirects=False)
+    assert (await client.get(f"/api/stats/{code}")).json()["clicks"] == 1
+
+
+@pytest.mark.asyncio
 async def test_custom_alias_redirect(client):
     await client.post(
         "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-link"}

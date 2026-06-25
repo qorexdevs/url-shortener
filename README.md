@@ -202,9 +202,13 @@ Drops every link that's past its ttl in one pass and returns how many were remov
 ### Redirect
 
 ```http
-GET /{code}   ->  307 redirect to original URL (308 for a permanent link)
-GET /{code}+  ->  preview the destination instead of following it
+GET  /{code}   ->  307 redirect to original URL (308 for a permanent link)
+HEAD /{code}   ->  same redirect headers, no body, no click counted
+GET  /{code}+  ->  preview the destination instead of following it
 ```
+
+A `HEAD` request returns the redirect headers without counting a click, so link
+checkers and unfurlers can probe a short link without inflating its stats.
 
 ## Configuration
 
