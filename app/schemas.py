@@ -56,6 +56,7 @@ class Summary(BaseModel):
     active: int
     expired: int
     permanent: int
+    unused: int
     avg_clicks: float
     busiest: str | None
 

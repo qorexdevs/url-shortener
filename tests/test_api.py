@@ -1432,7 +1432,7 @@ async def test_summary_empty(client):
     assert res.status_code == 200
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
-        "avg_clicks": 0.0, "busiest": None,
+        "unused": 0, "avg_clicks": 0.0, "busiest": None,
     }
 
 
@@ -1446,13 +1446,14 @@ async def test_summary_counts(client):
                  permanent=True, clicks=2),
             Link(original_url="https://dead.example.com", short_code="dead0001",
                  expires_at=past, clicks=5),
+            Link(original_url="https://fresh.example.com", short_code="fresh001", clicks=0),
         ])
         await session.commit()
 
     res = await client.get("/api/summary")
     assert res.json() == {
-        "total_links": 3, "total_clicks": 10, "active": 1, "expired": 1, "permanent": 1,
-        "avg_clicks": 3.33, "busiest": "dead0001",
+        "total_links": 4, "total_clicks": 10, "active": 2, "expired": 1, "permanent": 1,
+        "unused": 1, "avg_clicks": 2.5, "busiest": "dead0001",
     }
 
 

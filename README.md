@@ -161,6 +161,7 @@ GET /api/summary
   "active": 90,
   "expired": 30,
   "permanent": 8,
+  "unused": 12,
   "avg_clicks": 32.0,
   "busiest": "abc123"
 }
