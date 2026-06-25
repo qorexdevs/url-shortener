@@ -1337,3 +1337,36 @@ async def test_bulk_shorten_too_many_rejected(client):
         json={"urls": [{"url": "https://e.com"} for _ in range(101)]},
     )
     assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_bulk_delete(client):
+    codes = []
+    for _ in range(3):
+        res = await client.post("/api/shorten", json={"url": "https://example.com"})
+        codes.append(res.json()["short_code"])
+
+    res = await client.post("/api/links/bulk-delete", json={"codes": codes + ["nope"]})
+    assert res.status_code == 200
+    body = res.json()
+    assert sorted(body["deleted"]) == sorted(codes)
+    assert body["not_found"] == ["nope"]
+
+    for code in codes:
+        res = await client.get(f"/{code}", follow_redirects=False)
+        assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_bulk_delete_empty_rejected(client):
+    res = await client.post("/api/links/bulk-delete", json={"codes": []})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_bulk_delete_too_many_rejected(client):
+    res = await client.post(
+        "/api/links/bulk-delete",
+        json={"codes": [f"c{i}" for i in range(101)]},
+    )
+    assert res.status_code == 400

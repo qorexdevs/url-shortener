@@ -30,6 +30,13 @@ class BulkShortenItem(BaseModel):
 class BulkShortenResponse(BaseModel):
     results: list[BulkShortenItem]
 
+class BulkDeleteRequest(BaseModel):
+    codes: list[str]
+
+class BulkDeleteResponse(BaseModel):
+    deleted: list[str]
+    not_found: list[str]
+
 class RetargetRequest(BaseModel):
     url: str | None = None
     ttl_hours: int | None = None

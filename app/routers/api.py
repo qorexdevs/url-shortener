@@ -22,6 +22,8 @@ from app.queries import (
     list_links,
 )
 from app.schemas import (
+    BulkDeleteRequest,
+    BulkDeleteResponse,
     BulkShortenItem,
     BulkShortenRequest,
     BulkShortenResponse,
@@ -403,6 +405,28 @@ async def purge_expired(session: AsyncSession = Depends(get_session)):
     # drop every link past its ttl in one pass, for a cron or a manual cleanup
     removed = await delete_expired(session)
     return {"deleted": removed}
+
+@router.post("/api/links/bulk-delete", response_model=BulkDeleteResponse)
+async def delete_bulk(
+    data: BulkDeleteRequest, session: AsyncSession = Depends(get_session)
+):
+    # delete a batch by code in one call, reporting which were gone so the caller
+    # can tell a real removal from a code that never existed
+    if not data.codes:
+        raise HTTPException(status_code=400, detail="codes must not be empty")
+    if len(data.codes) > 100:
+        raise HTTPException(status_code=400, detail="at most 100 codes per request")
+
+    deleted, not_found = [], []
+    for code in data.codes:
+        link = await find_link(session, code)
+        if link:
+            await session.delete(link)
+            deleted.append(code)
+        else:
+            not_found.append(code)
+    await session.commit()
+    return BulkDeleteResponse(deleted=deleted, not_found=not_found)
 
 @router.delete("/api/links/{code}", status_code=204)
 async def delete_link(code: str, session: AsyncSession = Depends(get_session)):

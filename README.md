@@ -17,6 +17,7 @@
 
 - Shorten URLs with a single click
 - Bulk shorten up to 100 URLs in one request
+- Bulk delete links by code in one request
 - Custom aliases like `/my-link`
 - Click tracking with last-clicked timestamp
 - Dark-themed responsive UI
@@ -219,6 +220,25 @@ DELETE /api/links/{code}  ->  204 No Content
 ```
 
 Removes a short link by its code or custom alias. Returns 404 if nothing matches. The code lookup is case-insensitive, same as the other endpoints.
+
+### Delete in bulk
+
+```http
+POST /api/links/bulk-delete
+Content-Type: application/json
+```
+
+```json
+{"codes": ["aB3xYz", "org", "gone"]}
+```
+
+Removes a batch of links by code or alias, up to 100 per request. The response splits them so you can tell a real removal from a code that never existed:
+
+```json
+{"deleted": ["aB3xYz", "org"], "not_found": ["gone"]}
+```
+
+400 on an empty list or more than 100 codes.
 
 ### Purge expired
 
