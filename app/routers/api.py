@@ -22,6 +22,9 @@ from app.queries import (
     list_links,
 )
 from app.schemas import (
+    BulkShortenItem,
+    BulkShortenRequest,
+    BulkShortenResponse,
     LinkPreview,
     LinkStats,
     RetargetRequest,
@@ -50,8 +53,7 @@ def _parse_created(value: str, field: str) -> datetime | None:
         dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt
 
-@router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
-async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_session)):
+async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenResponse:
     url = data.url.strip()
     alias = data.custom_alias.strip() if data.custom_alias is not None else None
 
@@ -116,6 +118,42 @@ async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_
         expires_at=expires_at,
         permanent=link.permanent,
     )
+
+@router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
+async def shorten_url(data: ShortenRequest, session: AsyncSession = Depends(get_session)):
+    return await _shorten_one(data, session)
+
+@router.post("/api/shorten/bulk", response_model=BulkShortenResponse)
+async def shorten_bulk(
+    data: BulkShortenRequest, session: AsyncSession = Depends(get_session)
+):
+    # shorten a batch in one call: each url is tried on its own, so a bad one comes
+    # back as an error item instead of failing the whole request
+    if not data.urls:
+        raise HTTPException(status_code=400, detail="urls must not be empty")
+    if len(data.urls) > 100:
+        raise HTTPException(status_code=400, detail="at most 100 urls per request")
+
+    results = []
+    for item in data.urls:
+        try:
+            res = await _shorten_one(item, session)
+            results.append(
+                BulkShortenItem(
+                    ok=True,
+                    original_url=res.original_url,
+                    short_url=res.short_url,
+                    short_code=res.short_code,
+                    expires_at=res.expires_at,
+                    permanent=res.permanent,
+                )
+            )
+        except HTTPException as exc:
+            await session.rollback()
+            results.append(
+                BulkShortenItem(ok=False, original_url=item.url.strip(), error=exc.detail)
+            )
+    return BulkShortenResponse(results=results)
 
 @router.get("/api/health")
 async def health(session: AsyncSession = Depends(get_session)):

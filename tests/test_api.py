@@ -1268,3 +1268,72 @@ async def test_retarget_rejects_bad_ttl(client):
 
     res = await client.patch(f"/api/links/{code}", json={"ttl_hours": 0})
     assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_multiple(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://a.com"}, {"url": "https://b.com"}]},
+    )
+    assert res.status_code == 200
+    results = res.json()["results"]
+    assert len(results) == 2
+    assert all(r["ok"] for r in results)
+    assert results[0]["original_url"] == "https://a.com"
+    assert len({r["short_code"] for r in results}) == 2
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_partial_failure(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://ok.com"}, {"url": "not-a-url"}]},
+    )
+    assert res.status_code == 200
+    results = res.json()["results"]
+    assert results[0]["ok"] is True
+    assert results[1]["ok"] is False
+    assert results[1]["short_code"] is None
+    assert results[1]["error"]
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_keeps_custom_alias(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://x.com", "custom_alias": "mybulk"}]},
+    )
+    assert res.json()["results"][0]["short_code"] == "mybulk"
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_duplicate_alias_in_batch(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={
+            "urls": [
+                {"url": "https://x.com", "custom_alias": "dup"},
+                {"url": "https://y.com", "custom_alias": "dup"},
+            ]
+        },
+    )
+    results = res.json()["results"]
+    assert results[0]["ok"] is True
+    assert results[1]["ok"] is False
+    assert results[1]["error"] == "Alias already taken"
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_empty_rejected(client):
+    res = await client.post("/api/shorten/bulk", json={"urls": []})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_bulk_shorten_too_many_rejected(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://e.com"} for _ in range(101)]},
+    )
+    assert res.status_code == 400

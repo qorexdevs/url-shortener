@@ -16,6 +16,7 @@
 ## Features
 
 - Shorten URLs with a single click
+- Bulk shorten up to 100 URLs in one request
 - Custom aliases like `/my-link`
 - Click tracking with last-clicked timestamp
 - Dark-themed responsive UI
@@ -92,6 +93,34 @@ Only `http://` and `https://` URLs are accepted, including `localhost` and loopb
 `expires_at` is `null` when no `ttl_hours` was set. Set `permanent: true` to redirect with a
 cacheable 308 instead of the default 307. Browsers cache it, so later hits skip the server and
 stop counting clicks.
+
+### Shorten in bulk
+
+```http
+POST /api/shorten/bulk
+Content-Type: application/json
+```
+
+```json
+{
+  "urls": [
+    {"url": "https://example.com"},
+    {"url": "https://example.org", "custom_alias": "org", "ttl_hours": 24}
+  ]
+}
+```
+
+Each item takes the same fields as a single shorten. Up to 100 per request. Every url is tried
+on its own, so a bad one comes back as an error item instead of failing the whole batch:
+
+```json
+{
+  "results": [
+    {"ok": true, "original_url": "https://example.com", "short_url": "http://localhost:8000/aB3xYz", "short_code": "aB3xYz", "expires_at": null, "permanent": false},
+    {"ok": false, "original_url": "not-a-url", "error": "Invalid URL"}
+  ]
+}
+```
 
 ### Get Link Stats
 

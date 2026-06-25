@@ -15,6 +15,21 @@ class ShortenResponse(BaseModel):
     expires_at: datetime | None = None
     permanent: bool = False
 
+class BulkShortenRequest(BaseModel):
+    urls: list[ShortenRequest]
+
+class BulkShortenItem(BaseModel):
+    ok: bool
+    original_url: str
+    short_url: str | None = None
+    short_code: str | None = None
+    expires_at: datetime | None = None
+    permanent: bool = False
+    error: str | None = None
+
+class BulkShortenResponse(BaseModel):
+    results: list[BulkShortenItem]
+
 class RetargetRequest(BaseModel):
     url: str | None = None
     ttl_hours: int | None = None
