@@ -40,6 +40,7 @@ class BulkDeleteResponse(BaseModel):
 class RetargetRequest(BaseModel):
     url: str | None = None
     ttl_hours: int | None = None
+    permanent: bool | None = None
 
 class LinkPreview(BaseModel):
     short_url: str

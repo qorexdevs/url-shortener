@@ -1262,6 +1262,31 @@ async def test_retarget_empty_body_rejected(client):
 
 
 @pytest.mark.asyncio
+async def test_retarget_makes_link_permanent(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
+    )
+    code = res.json()["short_code"]
+    assert res.json()["expires_at"] is not None
+
+    res = await client.patch(f"/api/links/{code}", json={"permanent": True})
+    assert res.status_code == 200
+    assert res.json()["permanent"] is True
+    assert res.json()["expires_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_retarget_permanent_and_ttl_conflict(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.patch(
+        f"/api/links/{code}", json={"permanent": True, "ttl_hours": 24}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_retarget_rejects_bad_ttl(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]

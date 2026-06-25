@@ -361,13 +361,18 @@ async def retarget_link(
     code: str, data: RetargetRequest, session: AsyncSession = Depends(get_session)
 ):
     # update an existing link in place, keeping the code and clicks: a new
-    # destination, a fresh expiry window, or both
+    # destination, a fresh expiry window, promote it to permanent, or a mix
     link = await find_link(session, code)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    if data.url is None and data.ttl_hours is None:
-        raise HTTPException(status_code=400, detail="Provide url or ttl_hours")
+    if data.url is None and data.ttl_hours is None and data.permanent is None:
+        raise HTTPException(status_code=400, detail="Provide url, ttl_hours or permanent")
+
+    if data.ttl_hours is not None and data.permanent:
+        raise HTTPException(
+            status_code=400, detail="ttl_hours and permanent are mutually exclusive"
+        )
 
     if data.url is not None:
         url = data.url.strip()
@@ -384,6 +389,11 @@ async def retarget_link(
             )
         expires = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
         link.expires_at = expires.replace(tzinfo=None)
+
+    if data.permanent is not None:
+        link.permanent = data.permanent
+        if data.permanent:
+            link.expires_at = None
 
     await session.commit()
 
