@@ -142,6 +142,24 @@ GET /api/stats/{code}
 }
 ```
 
+### Summary
+
+```http
+GET /api/summary
+```
+
+```json
+{
+  "total_links": 128,
+  "total_clicks": 4096,
+  "active": 90,
+  "expired": 30,
+  "permanent": 8
+}
+```
+
+Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past.
+
 ### List Links
 
 ```http

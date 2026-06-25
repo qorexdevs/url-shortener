@@ -48,6 +48,13 @@ class LinkPreview(BaseModel):
     expires_at: datetime | None = None
     expired: bool = False
 
+class Summary(BaseModel):
+    total_links: int
+    total_clicks: int
+    active: int
+    expired: int
+    permanent: int
+
 class LinkStats(BaseModel):
     original_url: str
     short_url: str

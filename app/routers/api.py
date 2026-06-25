@@ -20,6 +20,7 @@ from app.queries import (
     find_link,
     link_expired,
     list_links,
+    summary_stats,
 )
 from app.schemas import (
     BulkDeleteRequest,
@@ -32,6 +33,7 @@ from app.schemas import (
     RetargetRequest,
     ShortenRequest,
     ShortenResponse,
+    Summary,
 )
 from app.utils import (
     RESERVED_ALIASES,
@@ -164,6 +166,11 @@ async def health(session: AsyncSession = Depends(get_session)):
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="database unavailable")
     return {"status": "ok"}
+
+@router.get("/api/summary", response_model=Summary)
+async def get_summary(session: AsyncSession = Depends(get_session)):
+    # totals across every link: count, clicks, and the active/expired/permanent split
+    return Summary(**await summary_stats(session))
 
 @router.get("/api/links", response_model=list[LinkStats])
 async def list_all_links(

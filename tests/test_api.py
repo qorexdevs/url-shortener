@@ -1424,3 +1424,31 @@ async def test_bulk_delete_too_many_rejected(client):
         json={"codes": [f"c{i}" for i in range(101)]},
     )
     assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_summary_empty(client):
+    res = await client.get("/api/summary")
+    assert res.status_code == 200
+    assert res.json() == {
+        "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_summary_counts(client):
+    past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://live.example.com", short_code="live0001", clicks=3),
+            Link(original_url="https://perm.example.com", short_code="perm0001",
+                 permanent=True, clicks=2),
+            Link(original_url="https://dead.example.com", short_code="dead0001",
+                 expires_at=past, clicks=5),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/summary")
+    assert res.json() == {
+        "total_links": 3, "total_clicks": 10, "active": 1, "expired": 1, "permanent": 1,
+    }

@@ -116,6 +116,32 @@ async def count_links(
     )
     return await session.scalar(stmt) or 0
 
+async def summary_stats(session: AsyncSession) -> dict:
+    # one-pass counters for a dashboard: totals plus the live/expired/permanent split.
+    # active and expired ignore permanent links, which have no expiry to be past.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    expires = Link.expires_at
+    row = (
+        await session.execute(
+            select(
+                func.count(Link.id),
+                func.coalesce(func.sum(Link.clicks), 0),
+                func.count().filter(Link.permanent.is_(True)),
+                func.count().filter(
+                    Link.permanent.is_(False), expires.is_not(None), expires <= now
+                ),
+            )
+        )
+    ).one()
+    total, clicks, permanent, expired = row
+    return {
+        "total_links": total,
+        "total_clicks": clicks,
+        "active": total - permanent - expired,
+        "expired": expired,
+        "permanent": permanent,
+    }
+
 async def find_link(session: AsyncSession, code: str) -> Link | None:
     code_key = code.lower()
     result = await session.execute(
