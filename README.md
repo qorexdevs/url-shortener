@@ -203,6 +203,7 @@ Returns a QR code image encoding the short URL. Useful for sharing links in prin
 PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into print or the web.
 `scale` sets the pixel size of each module (1-40, default 10) and `border` the quiet zone width (0-20, default 4).
 `download=1` adds a `Content-Disposition` so the browser saves the image as `{code}.png`/`.svg` instead of showing it inline.
+The `/stats/{code}` page also renders this QR inline with a download link, hidden once the link has expired.
 
 ### Retarget
 

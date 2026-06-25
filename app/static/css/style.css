@@ -225,6 +225,20 @@ input::placeholder {
     border-bottom: none;
 }
 
+.qr-row {
+    text-align: center;
+}
+
+.qr-img {
+    display: block;
+    width: 180px;
+    height: 180px;
+    margin: 0.75rem auto 0.5rem;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+}
+
 .stat-label {
     display: block;
     font-size: 0.8rem;

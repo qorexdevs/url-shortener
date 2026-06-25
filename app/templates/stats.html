@@ -41,6 +41,13 @@
             <span class="stat-desc">Last Clicked</span>
         </div>
     </div>
+    {% if not expired %}
+    <div class="stat-row qr-row">
+        <span class="stat-label">QR Code</span>
+        <img class="qr-img" src="/api/qr/{{ short_path }}?scale=6" alt="QR code for {{ short_url }}" width="180" height="180">
+        <a href="/api/qr/{{ short_path }}?download=1" class="stats-link" download>Download QR</a>
+    </div>
+    {% endif %}
     <a href="/" class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;text-decoration:none;">Shorten Another URL</a>
 </div>
 {% endblock %}

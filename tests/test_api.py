@@ -770,6 +770,35 @@ async def test_stats_page_short_url_uses_custom_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_stats_page_shows_qr_for_active_link(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-qr"}
+    )
+    res = await client.get("/stats/gh-qr")
+    assert res.status_code == 200
+    assert "/api/qr/gh-qr" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_hides_qr_for_expired_link(client):
+    base = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    with patch("app.routers.api.datetime") as mock_dt:
+        mock_dt.now.return_value = base
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.post(
+            "/api/shorten", json={"url": "https://example.com", "ttl_hours": 1}
+        )
+    code = res.json()["short_code"]
+
+    with patch("app.routers.pages.datetime") as mock_dt:
+        mock_dt.now.return_value = base + timedelta(hours=2)
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        res = await client.get(f"/stats/{code}")
+        assert res.status_code == 200
+        assert "/api/qr/" not in res.text
+
+
+@pytest.mark.asyncio
 async def test_stats_page_short_code_lookup_case_insensitive(client):
     with patch("app.routers.api.generate_short_code", return_value="AbC123"):
         res = await client.post("/api/shorten", json={"url": "https://example.com"})

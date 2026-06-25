@@ -31,6 +31,7 @@ async def stats_page(request: Request, code: str, session: AsyncSession = Depend
         {
             "link": link,
             "short_url": f"{BASE_URL}/{short_path}",
+            "short_path": short_path,
             "base_url": BASE_URL,
             "expired": expired,
         },
