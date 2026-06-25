@@ -160,11 +160,13 @@ GET /api/summary
   "total_clicks": 4096,
   "active": 90,
   "expired": 30,
-  "permanent": 8
+  "permanent": 8,
+  "avg_clicks": 32.0,
+  "busiest": "abc123"
 }
 ```
 
-Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past.
+Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past. `avg_clicks` is the mean clicks per link and `busiest` is the code of the most clicked one (`null` when there are no links).
 
 ### List Links
 

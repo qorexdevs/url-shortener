@@ -1432,6 +1432,7 @@ async def test_summary_empty(client):
     assert res.status_code == 200
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
+        "avg_clicks": 0.0, "busiest": None,
     }
 
 
@@ -1451,6 +1452,7 @@ async def test_summary_counts(client):
     res = await client.get("/api/summary")
     assert res.json() == {
         "total_links": 3, "total_clicks": 10, "active": 1, "expired": 1, "permanent": 1,
+        "avg_clicks": 3.33, "busiest": "dead0001",
     }
 
 

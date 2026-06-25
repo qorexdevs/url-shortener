@@ -134,12 +134,19 @@ async def summary_stats(session: AsyncSession) -> dict:
         )
     ).one()
     total, clicks, permanent, expired = row
+    busiest = (
+        await session.execute(
+            select(Link.short_code).order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
+        )
+    ).scalar_one_or_none()
     return {
         "total_links": total,
         "total_clicks": clicks,
         "active": total - permanent - expired,
         "expired": expired,
         "permanent": permanent,
+        "avg_clicks": round(clicks / total, 2) if total else 0.0,
+        "busiest": busiest,
     }
 
 async def find_live_by_url(session: AsyncSession, url: str) -> Link | None:

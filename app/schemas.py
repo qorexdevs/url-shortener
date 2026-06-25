@@ -56,6 +56,8 @@ class Summary(BaseModel):
     active: int
     expired: int
     permanent: int
+    avg_clicks: float
+    busiest: str | None
 
 class LinkStats(BaseModel):
     original_url: str
