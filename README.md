@@ -166,11 +166,13 @@ Resolves where a short link points without following it. No click is counted and
 GET /api/qr/{code}                   ->  PNG image
 GET /api/qr/{code}?fmt=svg            ->  SVG image
 GET /api/qr/{code}?scale=20&border=2  ->  bigger image, tighter quiet zone
+GET /api/qr/{code}?download=1         ->  same image as a file download
 ```
 
 Returns a QR code image encoding the short URL. Useful for sharing links in print or presentations.
 PNG by default; pass `fmt=svg` for a crisp, scalable vector you can drop into print or the web.
 `scale` sets the pixel size of each module (1-40, default 10) and `border` the quiet zone width (0-20, default 4).
+`download=1` adds a `Content-Disposition` so the browser saves the image as `{code}.png`/`.svg` instead of showing it inline.
 
 ### Retarget
 

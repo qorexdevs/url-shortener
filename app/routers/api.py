@@ -280,6 +280,7 @@ async def get_qr_code(
     fmt: str = "png",
     scale: int = 10,
     border: int = 4,
+    download: bool = False,
     session: AsyncSession = Depends(get_session),
 ):
     fmt = fmt.lower()
@@ -311,6 +312,8 @@ async def get_qr_code(
     buf.seek(0)
     # the qr image never changes for a code, so let browsers and caches keep it
     headers = {"Cache-Control": "public, max-age=86400"}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{short_path}.{fmt}"'
     return StreamingResponse(buf, media_type=media_type, headers=headers)
 
 @router.patch("/api/links/{code}", response_model=LinkStats)

@@ -636,6 +636,22 @@ async def test_qr_code_rejects_bad_border(client):
 
 
 @pytest.mark.asyncio
+async def test_qr_code_download_sets_attachment(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    inline = await client.get(f"/api/qr/{code}")
+    assert "content-disposition" not in inline.headers
+
+    res = await client.get(f"/api/qr/{code}?download=1")
+    assert res.status_code == 200
+    assert res.headers["content-disposition"] == f'attachment; filename="{code}.png"'
+
+    res = await client.get(f"/api/qr/{code}?fmt=svg&download=1")
+    assert res.headers["content-disposition"] == f'attachment; filename="{code}.svg"'
+
+
+@pytest.mark.asyncio
 async def test_qr_code_lookup_case_insensitive(client):
     await client.post(
         "/api/shorten", json={"url": "https://example.com", "custom_alias": "Qr-Link"}
