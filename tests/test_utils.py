@@ -58,6 +58,13 @@ def test_normalize_url_leaves_ascii_untouched():
     assert normalize_url("http://localhost:3000") == "http://localhost:3000"
 
 
+def test_normalize_url_lowercases_scheme_and_host():
+    # scheme and host are case-insensitive, the path is not
+    assert normalize_url("HTTP://Example.COM/Path") == "http://example.com/Path"
+    assert normalize_url("https://EXAMPLE.com/a?b=C") == "https://example.com/a?b=C"
+    assert normalize_url("HTTPS://Foo:8080/x") == "https://foo:8080/x"
+
+
 def test_validate_url_max_length():
     long_path = "https://example.com/" + "a" * 2048
     assert validate_url(long_path) is False
