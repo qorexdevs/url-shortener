@@ -60,6 +60,7 @@ class Summary(BaseModel):
     unused: int
     custom: int
     expiring_soon: int
+    created_recently: int
     avg_clicks: float
     busiest: str | None
 

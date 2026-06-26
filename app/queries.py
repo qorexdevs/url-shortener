@@ -126,6 +126,7 @@ async def summary_stats(session: AsyncSession) -> dict:
     # active and expired ignore permanent links, which have no expiry to be past.
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     soon = now + timedelta(hours=24)
+    day_ago = now - timedelta(hours=24)
     expires = Link.expires_at
     row = (
         await session.execute(
@@ -143,10 +144,12 @@ async def summary_stats(session: AsyncSession) -> dict:
                     Link.permanent.is_(False), expires.is_not(None),
                     expires > now, expires <= soon,
                 ),
+                # links made in the last day - the counterpart to expiring_soon
+                func.count().filter(Link.created_at >= day_ago),
             )
         )
     ).one()
-    total, clicks, permanent, expired, unused, custom, expiring_soon = row
+    total, clicks, permanent, expired, unused, custom, expiring_soon, created_recently = row
     busiest = (
         await session.execute(
             select(Link.short_code).order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
@@ -161,6 +164,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "unused": unused,
         "custom": custom,
         "expiring_soon": expiring_soon,
+        "created_recently": created_recently,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
     }

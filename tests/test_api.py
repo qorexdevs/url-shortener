@@ -1462,7 +1462,8 @@ async def test_summary_empty(client):
     assert res.status_code == 200
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
-        "unused": 0, "custom": 0, "expiring_soon": 0, "avg_clicks": 0.0, "busiest": None,
+        "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0,
+        "avg_clicks": 0.0, "busiest": None,
     }
 
 
@@ -1488,8 +1489,24 @@ async def test_summary_counts(client):
     res = await client.get("/api/summary")
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
-        "unused": 1, "custom": 1, "expiring_soon": 1, "avg_clicks": 2.2, "busiest": "dead0001",
+        "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5,
+        "avg_clicks": 2.2, "busiest": "dead0001",
     }
+
+
+@pytest.mark.asyncio
+async def test_summary_created_recently_excludes_old(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://new.example.com", short_code="new00001"),
+            Link(original_url="https://old.example.com", short_code="old00001",
+                 created_at=now - timedelta(days=2)),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/summary")
+    assert res.json()["created_recently"] == 1
 
 
 @pytest.mark.asyncio
