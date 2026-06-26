@@ -179,6 +179,7 @@ GET /api/links?sort=clicks        ->  most clicked first
 GET /api/links?sort=recent        ->  most recently clicked first, never-clicked last
 GET /api/links?sort=stale         ->  least recently clicked first, never-clicked on top
 GET /api/links?sort=expiring      ->  soonest to expire first, no-ttl links last
+GET /api/links?sort=code          ->  alphabetical by short path (alias if set, else code)
 GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
 GET /api/links?status=permanent   ->  only permanent 308 links

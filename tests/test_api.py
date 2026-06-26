@@ -968,6 +968,18 @@ async def test_list_links_sort_by_expiring(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_code(client):
+    await client.post("/api/shorten", json={"url": "https://m.example.com", "custom_alias": "mango"})
+    await client.post("/api/shorten", json={"url": "https://a.example.com", "custom_alias": "apple"})
+    await client.post("/api/shorten", json={"url": "https://z.example.com", "custom_alias": "zebra"})
+
+    res = await client.get("/api/links?sort=code")
+    assert res.status_code == 200
+    paths = [item["short_url"].rsplit("/", 1)[-1] for item in res.json()]
+    assert paths == ["apple", "mango", "zebra"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_status(client):
     await client.post("/api/shorten", json={"url": "https://live.example.com"})
     past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)

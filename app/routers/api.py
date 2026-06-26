@@ -213,10 +213,10 @@ async def list_all_links(
     clicked_bef = _parse_created(clicked_before, "clicked_before")
     expires_aft = _parse_created(expires_after, "expires_after")
     expires_bef = _parse_created(expires_before, "expires_before")
-    if sort not in ("created", "clicks", "recent", "stale", "expiring"):
+    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code"):
         raise HTTPException(
             status_code=400,
-            detail="sort must be 'created', 'clicks', 'recent', 'stale' or 'expiring'",
+            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring' or 'code'",
         )
     if status not in ("all", "active", "expired", "permanent", "unused"):
         raise HTTPException(

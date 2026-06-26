@@ -78,6 +78,9 @@ async def list_links(
         order = Link.last_clicked.asc().nulls_first()
     elif sort == "expiring":
         order = Link.expires_at.asc().nulls_last()
+    elif sort == "code":
+        # alphabetical by the path people actually see - the alias if set, else the code
+        order = func.coalesce(Link.custom_alias, Link.short_code).asc()
     else:
         order = Link.created_at.desc()
     stmt = _filtered(
