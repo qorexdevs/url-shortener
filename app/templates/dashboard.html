@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Dashboard</h1>
+    <p class="subtitle">A live snapshot of every link in the store.</p>
+</div>
+
+<div class="card stats-card">
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.total_links }}</span>
+            <span class="stat-desc">Total Links</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.total_clicks }}</span>
+            <span class="stat-desc">Total Clicks</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.avg_clicks }}</span>
+            <span class="stat-desc">Avg Clicks</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.active }}</span>
+            <span class="stat-desc">Active</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.expiring_soon }}</span>
+            <span class="stat-desc">Expiring &lt; 24h</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.expired }}</span>
+            <span class="stat-desc">Expired</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.permanent }}</span>
+            <span class="stat-desc">Permanent</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.unused }}</span>
+            <span class="stat-desc">Never Clicked</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.custom }}</span>
+            <span class="stat-desc">Custom Aliases</span>
+        </div>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Busiest Link</span>
+        {% if stats.busiest %}
+        <a href="/stats/{{ stats.busiest }}" class="stat-value link">{{ stats.busiest }}</a>
+        {% else %}
+        <span class="stat-value">None yet</span>
+        {% endif %}
+    </div>
+    <a href="/" class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;text-decoration:none;">Shorten a URL</a>
+</div>
+{% endblock %}

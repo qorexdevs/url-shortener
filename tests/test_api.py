@@ -1489,6 +1489,21 @@ async def test_summary_counts(client):
 
 
 @pytest.mark.asyncio
+async def test_dashboard_page(client):
+    async with db_session_factory() as session:
+        session.add(Link(original_url="https://x.example.com", short_code="busy0001", clicks=9))
+        await session.commit()
+
+    res = await client.get("/dashboard")
+    assert res.status_code == 200
+    assert "text/html" in res.headers["content-type"]
+    body = res.text
+    assert "Dashboard" in body
+    # busiest link gets rendered as a link to its stats page
+    assert "/stats/busy0001" in body
+
+
+@pytest.mark.asyncio
 async def test_shorten_reuse_returns_same_code(client):
     first = await client.post(
         "/api/shorten", json={"url": "https://example.com", "reuse": True}

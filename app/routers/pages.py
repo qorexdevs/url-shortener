@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
 from app.database import get_session
-from app.queries import find_link
+from app.queries import find_link, summary_stats
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -14,6 +14,11 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/")
 async def home(request: Request):
     return templates.TemplateResponse(request, "index.html")
+
+@router.get("/dashboard")
+async def dashboard_page(request: Request, session: AsyncSession = Depends(get_session)):
+    stats = await summary_stats(session)
+    return templates.TemplateResponse(request, "dashboard.html", {"stats": stats})
 
 @router.get("/stats/{code}")
 async def stats_page(request: Request, code: str, session: AsyncSession = Depends(get_session)):

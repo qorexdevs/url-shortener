@@ -36,6 +36,9 @@ body {
     padding: 1rem 2rem;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .logo {
@@ -43,6 +46,17 @@ body {
     font-weight: 700;
     color: var(--text);
     text-decoration: none;
+}
+
+.nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--text);
 }
 
 .container {
