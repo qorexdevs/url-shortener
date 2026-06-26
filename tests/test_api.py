@@ -1463,7 +1463,7 @@ async def test_summary_empty(client):
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
         "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0,
-        "avg_clicks": 0.0, "busiest": None,
+        "avg_clicks": 0.0, "busiest": None, "busiest_clicks": 0,
     }
 
 
@@ -1490,7 +1490,7 @@ async def test_summary_counts(client):
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
         "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5,
-        "avg_clicks": 2.2, "busiest": "dead0001",
+        "avg_clicks": 2.2, "busiest": "dead0001", "busiest_clicks": 5,
     }
 
 
@@ -1521,8 +1521,9 @@ async def test_dashboard_page(client):
     assert "text/html" in res.headers["content-type"]
     body = res.text
     assert "Dashboard" in body
-    # busiest link gets rendered as a link to its stats page
+    # busiest link gets rendered as a link to its stats page, with its click count
     assert "/stats/busy0001" in body
+    assert "busy0001 (9 clicks)" in body
     # the top-links list shows clicked links but skips never-clicked ones
     assert "Top Links" in body
     assert "9 clicks" in body

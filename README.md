@@ -166,11 +166,12 @@ GET /api/summary
   "expiring_soon": 4,
   "created_recently": 6,
   "avg_clicks": 32.0,
-  "busiest": "abc123"
+  "busiest": "abc123",
+  "busiest_clicks": 412
 }
 ```
 
-Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past. `unused` is links with no clicks, `custom` is links created with a custom alias. `expiring_soon` is the live links whose ttl runs out within the next 24h - the ones worth a heads-up before they go dark. `created_recently` is the links made in the last 24h, the counterpart to `expiring_soon`. `avg_clicks` is the mean clicks per link and `busiest` is the code of the most clicked one (`null` when there are no links).
+Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past. `unused` is links with no clicks, `custom` is links created with a custom alias. `expiring_soon` is the live links whose ttl runs out within the next 24h - the ones worth a heads-up before they go dark. `created_recently` is the links made in the last 24h, the counterpart to `expiring_soon`. `avg_clicks` is the mean clicks per link, `busiest` is the code of the most clicked one (`null` when there are no links) and `busiest_clicks` is its click count (`0` when there are none).
 
 ### List Links
 

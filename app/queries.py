@@ -150,11 +150,13 @@ async def summary_stats(session: AsyncSession) -> dict:
         )
     ).one()
     total, clicks, permanent, expired, unused, custom, expiring_soon, created_recently = row
-    busiest = (
+    top = (
         await session.execute(
-            select(Link.short_code).order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
+            select(Link.short_code, Link.clicks)
+            .order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
         )
-    ).scalar_one_or_none()
+    ).first()
+    busiest, busiest_clicks = (top[0], top[1]) if top else (None, 0)
     return {
         "total_links": total,
         "total_clicks": clicks,
@@ -167,6 +169,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "created_recently": created_recently,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
+        "busiest_clicks": busiest_clicks,
     }
 
 async def find_live_by_url(session: AsyncSession, url: str) -> Link | None:
