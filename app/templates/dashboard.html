@@ -57,4 +57,16 @@
     </div>
     <a href="/" class="btn btn-primary" style="margin-top:1.5rem;display:inline-block;text-decoration:none;">Shorten a URL</a>
 </div>
+
+{% if top %}
+<div class="card stats-card">
+    <h2 style="margin-top:0;">Top Links</h2>
+    {% for link in top %}
+    <div class="stat-row">
+        <a href="/stats/{{ link.custom_alias or link.short_code }}" class="stat-label link">{{ link.custom_alias or link.short_code }}</a>
+        <span class="stat-value">{{ link.clicks }} clicks</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

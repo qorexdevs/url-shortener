@@ -1492,6 +1492,7 @@ async def test_summary_counts(client):
 async def test_dashboard_page(client):
     async with db_session_factory() as session:
         session.add(Link(original_url="https://x.example.com", short_code="busy0001", clicks=9))
+        session.add(Link(original_url="https://y.example.com", short_code="cold0001", clicks=0))
         await session.commit()
 
     res = await client.get("/dashboard")
@@ -1501,6 +1502,10 @@ async def test_dashboard_page(client):
     assert "Dashboard" in body
     # busiest link gets rendered as a link to its stats page
     assert "/stats/busy0001" in body
+    # the top-links list shows clicked links but skips never-clicked ones
+    assert "Top Links" in body
+    assert "9 clicks" in body
+    assert "cold0001" not in body
 
 
 @pytest.mark.asyncio
