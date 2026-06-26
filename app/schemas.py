@@ -47,6 +47,7 @@ class RetargetRequest(BaseModel):
 class LinkPreview(BaseModel):
     short_url: str
     original_url: str
+    clicks: int = 0
     expires_at: datetime | None = None
     expired: bool = False
 

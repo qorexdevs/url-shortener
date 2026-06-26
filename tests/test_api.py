@@ -309,15 +309,18 @@ async def test_redirect_plus_peeks_without_counting(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]
 
+    # a real visit first, so the peek has a click count to report back
+    await client.get(f"/{code}", follow_redirects=False)
+
     res = await client.get(f"/{code}+", follow_redirects=False)
     assert res.status_code == 200
     data = res.json()
     assert data["original_url"] == "https://example.com"
     assert data["expired"] is False
+    assert data["clicks"] == 1
 
     res = await client.get(f"/api/stats/{code}")
-    assert res.json()["clicks"] == 0
-    assert res.json()["last_clicked"] is None
+    assert res.json()["clicks"] == 1
 
 
 @pytest.mark.asyncio
@@ -369,6 +372,7 @@ async def test_preview_returns_destination(client):
     data = res.json()
     assert data["original_url"] == "https://example.com"
     assert data["expired"] is False
+    assert data["clicks"] == 0
 
 
 @pytest.mark.asyncio

@@ -336,6 +336,7 @@ async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
     return LinkPreview(
         short_url=f"{BASE_URL}/{short_path}",
         original_url=link.original_url,
+        clicks=link.clicks,
         expires_at=link.expires_at,
         expired=link_expired(link),
     )
@@ -485,6 +486,7 @@ async def redirect_to_url(
         return LinkPreview(
             short_url=f"{BASE_URL}/{short_path}",
             original_url=link.original_url,
+            clicks=link.clicks,
             expires_at=link.expires_at,
             expired=link_expired(link),
         )

@@ -214,12 +214,13 @@ GET /api/preview/{code}
 {
   "short_url": "http://localhost:8000/my-link",
   "original_url": "https://example.com/very/long/url",
+  "clicks": 42,
   "expires_at": "2025-01-02T00:00:00",
   "expired": false
 }
 ```
 
-Resolves where a short link points without following it. No click is counted and there is no redirect, so it is safe for checking a link before opening it. You can also append `+` to the short link itself (`GET /{code}+`) to get the same preview, the way bitly does.
+Resolves where a short link points without following it, along with its current click count. No click is counted and there is no redirect, so it is safe for checking a link before opening it. You can also append `+` to the short link itself (`GET /{code}+`) to get the same preview, the way bitly does.
 
 ### QR Code
 
