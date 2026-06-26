@@ -181,6 +181,7 @@ GET /api/links?sort=expiring      ->  soonest to expire first, no-ttl links last
 GET /api/links?status=active      ->  only links that haven't expired
 GET /api/links?status=expired     ->  only links past their ttl
 GET /api/links?status=permanent   ->  only permanent 308 links
+GET /api/links?status=unused      ->  only links nobody has clicked yet
 GET /api/links?q=github           ->  match the destination url, code or alias
 GET /api/links?min_clicks=10      ->  only links with at least that many clicks
 GET /api/links?max_clicks=1       ->  only links with at most that many clicks

@@ -218,9 +218,10 @@ async def list_all_links(
             status_code=400,
             detail="sort must be 'created', 'clicks', 'recent', 'stale' or 'expiring'",
         )
-    if status not in ("all", "active", "expired", "permanent"):
+    if status not in ("all", "active", "expired", "permanent", "unused"):
         raise HTTPException(
-            status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
+            status_code=400,
+            detail="status must be 'all', 'active', 'expired', 'permanent' or 'unused'",
         )
 
     q = q.strip()
@@ -260,9 +261,10 @@ async def export_links_csv(
 ):
     # full export of the matching links as csv, same status/q/min_clicks filters as
     # the list, no pagination - for a backup or a spreadsheet
-    if status not in ("all", "active", "expired", "permanent"):
+    if status not in ("all", "active", "expired", "permanent", "unused"):
         raise HTTPException(
-            status_code=400, detail="status must be 'all', 'active', 'expired' or 'permanent'"
+            status_code=400,
+            detail="status must be 'all', 'active', 'expired', 'permanent' or 'unused'",
         )
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")

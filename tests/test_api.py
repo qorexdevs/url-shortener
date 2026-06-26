@@ -989,6 +989,20 @@ async def test_list_links_filter_by_status(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_unused(client):
+    await client.post("/api/shorten", json={"url": "https://never.example.com"})
+    async with db_session_factory() as session:
+        session.add(
+            Link(original_url="https://clicked.example.com", short_code="hit00001", clicks=3)
+        )
+        await session.commit()
+
+    unused = await client.get("/api/links?status=unused")
+    assert [x["original_url"] for x in unused.json()] == ["https://never.example.com"]
+    assert all(x["clicks"] == 0 for x in unused.json())
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(

@@ -26,6 +26,8 @@ def _filtered(
 ):
     if status == "permanent":
         stmt = stmt.where(Link.permanent.is_(True))
+    elif status == "unused":
+        stmt = stmt.where(Link.clicks == 0)
     elif status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
