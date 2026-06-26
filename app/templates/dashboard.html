@@ -54,7 +54,7 @@
     <div class="stat-row">
         <span class="stat-label">Busiest Link</span>
         {% if stats.busiest %}
-        <a href="/stats/{{ stats.busiest }}" class="stat-value link">{{ stats.busiest }} ({{ stats.busiest_clicks }} clicks)</a>
+        <a href="/stats/{{ stats.busiest }}" class="stat-value link">{{ stats.busiest }} ({{ stats.busiest_clicks }} clicks, {{ (stats.busiest_share * 100) | round | int }}% of all)</a>
         {% else %}
         <span class="stat-value">None yet</span>
         {% endif %}

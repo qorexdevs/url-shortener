@@ -170,6 +170,8 @@ async def summary_stats(session: AsyncSession) -> dict:
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
         "busiest_clicks": busiest_clicks,
+        # how much of all traffic the single busiest link pulls - 0..1
+        "busiest_share": round(busiest_clicks / clicks, 2) if clicks else 0.0,
     }
 
 async def find_live_by_url(session: AsyncSession, url: str) -> Link | None:

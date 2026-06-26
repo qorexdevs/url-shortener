@@ -64,6 +64,7 @@ class Summary(BaseModel):
     avg_clicks: float
     busiest: str | None
     busiest_clicks: int = 0
+    busiest_share: float = 0.0
 
 class LinkStats(BaseModel):
     original_url: str
