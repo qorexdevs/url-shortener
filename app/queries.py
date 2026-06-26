@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -125,6 +125,7 @@ async def summary_stats(session: AsyncSession) -> dict:
     # one-pass counters for a dashboard: totals plus the live/expired/permanent split.
     # active and expired ignore permanent links, which have no expiry to be past.
     now = datetime.now(timezone.utc).replace(tzinfo=None)
+    soon = now + timedelta(hours=24)
     expires = Link.expires_at
     row = (
         await session.execute(
@@ -137,10 +138,15 @@ async def summary_stats(session: AsyncSession) -> dict:
                 ),
                 func.count().filter(Link.clicks == 0),
                 func.count().filter(Link.custom_alias.is_not(None)),
+                # still live but expiring within a day - the dashboard's "act now" bucket
+                func.count().filter(
+                    Link.permanent.is_(False), expires.is_not(None),
+                    expires > now, expires <= soon,
+                ),
             )
         )
     ).one()
-    total, clicks, permanent, expired, unused, custom = row
+    total, clicks, permanent, expired, unused, custom, expiring_soon = row
     busiest = (
         await session.execute(
             select(Link.short_code).order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
@@ -154,6 +160,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "permanent": permanent,
         "unused": unused,
         "custom": custom,
+        "expiring_soon": expiring_soon,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
     }

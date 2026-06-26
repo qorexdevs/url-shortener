@@ -58,6 +58,7 @@ class Summary(BaseModel):
     permanent: int
     unused: int
     custom: int
+    expiring_soon: int
     avg_clicks: float
     busiest: str | None
 

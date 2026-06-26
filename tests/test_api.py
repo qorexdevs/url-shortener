@@ -1458,13 +1458,15 @@ async def test_summary_empty(client):
     assert res.status_code == 200
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
-        "unused": 0, "custom": 0, "avg_clicks": 0.0, "busiest": None,
+        "unused": 0, "custom": 0, "expiring_soon": 0, "avg_clicks": 0.0, "busiest": None,
     }
 
 
 @pytest.mark.asyncio
 async def test_summary_counts(client):
-    past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    past = now - timedelta(hours=1)
+    soon = now + timedelta(hours=12)
     async with db_session_factory() as session:
         session.add_all([
             Link(original_url="https://live.example.com", short_code="live0001",
@@ -1474,13 +1476,15 @@ async def test_summary_counts(client):
             Link(original_url="https://dead.example.com", short_code="dead0001",
                  expires_at=past, clicks=5),
             Link(original_url="https://fresh.example.com", short_code="fresh001", clicks=0),
+            Link(original_url="https://soon.example.com", short_code="soon0001",
+                 expires_at=soon, clicks=1),
         ])
         await session.commit()
 
     res = await client.get("/api/summary")
     assert res.json() == {
-        "total_links": 4, "total_clicks": 10, "active": 2, "expired": 1, "permanent": 1,
-        "unused": 1, "custom": 1, "avg_clicks": 2.5, "busiest": "dead0001",
+        "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
+        "unused": 1, "custom": 1, "expiring_soon": 1, "avg_clicks": 2.2, "busiest": "dead0001",
     }
 
 
