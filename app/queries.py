@@ -133,10 +133,11 @@ async def summary_stats(session: AsyncSession) -> dict:
                     Link.permanent.is_(False), expires.is_not(None), expires <= now
                 ),
                 func.count().filter(Link.clicks == 0),
+                func.count().filter(Link.custom_alias.is_not(None)),
             )
         )
     ).one()
-    total, clicks, permanent, expired, unused = row
+    total, clicks, permanent, expired, unused, custom = row
     busiest = (
         await session.execute(
             select(Link.short_code).order_by(Link.clicks.desc(), Link.id.asc()).limit(1)
@@ -149,6 +150,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "expired": expired,
         "permanent": permanent,
         "unused": unused,
+        "custom": custom,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
     }
