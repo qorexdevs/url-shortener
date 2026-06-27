@@ -238,7 +238,7 @@ async def test_shorten_invalid_alias(client):
 
 @pytest.mark.asyncio
 async def test_shorten_rejects_reserved_alias(client):
-    for alias in ("api", "static", "stats", "docs", "redoc"):
+    for alias in ("api", "static", "stats", "dashboard", "docs", "redoc"):
         res = await client.post(
             "/api/shorten", json={"url": "https://example.com", "custom_alias": alias}
         )
