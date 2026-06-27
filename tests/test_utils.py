@@ -65,6 +65,14 @@ def test_normalize_url_lowercases_scheme_and_host():
     assert normalize_url("HTTPS://Foo:8080/x") == "https://foo:8080/x"
 
 
+def test_normalize_url_strips_default_port():
+    assert normalize_url("http://example.com:80/a") == "http://example.com/a"
+    assert normalize_url("https://example.com:443/a") == "https://example.com/a"
+    # a non-default port stays, and the default port for the other scheme stays
+    assert normalize_url("http://example.com:443/a") == "http://example.com:443/a"
+    assert normalize_url("https://example.com:8080/a") == "https://example.com:8080/a"
+
+
 def test_validate_url_max_length():
     long_path = "https://example.com/" + "a" * 2048
     assert validate_url(long_path) is False

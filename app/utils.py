@@ -69,7 +69,9 @@ def normalize_url(url: str) -> str:
         userinfo += "@"
     host_part = f"[{ascii_host}]" if ":" in ascii_host else ascii_host
     netloc = f"{userinfo}{host_part}"
-    if parsed.port is not None:
+    # drop the default port so http://x:80 and https://x:443 reuse the bare-host link
+    default_port = {"http": 80, "https": 443}.get(parsed.scheme.lower())
+    if parsed.port is not None and parsed.port != default_port:
         netloc += f":{parsed.port}"
     return urlunsplit((parsed.scheme.lower(), netloc, parsed.path, parsed.query, parsed.fragment))
 
