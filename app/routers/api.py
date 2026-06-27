@@ -253,18 +253,24 @@ async def list_all_links(
 
 @router.get("/api/links.csv")
 async def export_links_csv(
-    status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
+    status: str = "all", sort: str = "created", q: str = "",
+    min_clicks: int = 0, max_clicks: int | None = None,
     created_after: str = "", created_before: str = "",
     clicked_after: str = "", clicked_before: str = "",
     expires_after: str = "", expires_before: str = "",
     session: AsyncSession = Depends(get_session),
 ):
-    # full export of the matching links as csv, same status/q/min_clicks filters as
+    # full export of the matching links as csv, same status/q/sort filters as
     # the list, no pagination - for a backup or a spreadsheet
     if status not in ("all", "active", "expired", "permanent", "unused", "used", "expiring"):
         raise HTTPException(
             status_code=400,
             detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used' or 'expiring'",
+        )
+    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code"):
+        raise HTTPException(
+            status_code=400,
+            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring' or 'code'",
         )
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
@@ -278,7 +284,7 @@ async def export_links_csv(
     expires_bef = _parse_created(expires_before, "expires_before")
     links = await all_links(
         session, status, q.strip(), min_clicks, max_clicks, after, before,
-        clicked_aft, clicked_bef, expires_aft, expires_bef,
+        clicked_aft, clicked_bef, expires_aft, expires_bef, sort,
     )
 
     buf = StringIO()

@@ -72,6 +72,21 @@ def _filtered(
         )
     return stmt
 
+def _order_for(sort: str):
+    if sort == "clicks":
+        return Link.clicks.desc()
+    if sort == "recent":
+        return Link.last_clicked.desc().nulls_last()
+    if sort == "stale":
+        # least recently clicked first, never-clicked on top - handy for pruning
+        return Link.last_clicked.asc().nulls_first()
+    if sort == "expiring":
+        return Link.expires_at.asc().nulls_last()
+    if sort == "code":
+        # alphabetical by the path people actually see - the alias if set, else the code
+        return func.coalesce(Link.custom_alias, Link.short_code).asc()
+    return Link.created_at.desc()
+
 async def list_links(
     session: AsyncSession, limit: int, offset: int, sort: str = "created",
     status: str = "all", q: str = "", min_clicks: int = 0, max_clicks: int | None = None,
@@ -79,26 +94,12 @@ async def list_links(
     clicked_after: datetime | None = None, clicked_before: datetime | None = None,
     expires_after: datetime | None = None, expires_before: datetime | None = None,
 ) -> list[Link]:
-    if sort == "clicks":
-        order = Link.clicks.desc()
-    elif sort == "recent":
-        order = Link.last_clicked.desc().nulls_last()
-    elif sort == "stale":
-        # least recently clicked first, never-clicked on top - handy for pruning
-        order = Link.last_clicked.asc().nulls_first()
-    elif sort == "expiring":
-        order = Link.expires_at.asc().nulls_last()
-    elif sort == "code":
-        # alphabetical by the path people actually see - the alias if set, else the code
-        order = func.coalesce(Link.custom_alias, Link.short_code).asc()
-    else:
-        order = Link.created_at.desc()
     stmt = _filtered(
         select(Link), status, q, min_clicks, max_clicks, created_after, created_before,
         clicked_after, clicked_before, expires_after, expires_before,
     )
     result = await session.execute(
-        stmt.order_by(order, Link.id.desc()).limit(limit).offset(offset)
+        stmt.order_by(_order_for(sort), Link.id.desc()).limit(limit).offset(offset)
     )
     return list(result.scalars().all())
 
@@ -107,13 +108,13 @@ async def all_links(
     max_clicks: int | None = None, created_after: datetime | None = None,
     created_before: datetime | None = None, clicked_after: datetime | None = None,
     clicked_before: datetime | None = None, expires_after: datetime | None = None,
-    expires_before: datetime | None = None,
+    expires_before: datetime | None = None, sort: str = "created",
 ) -> list[Link]:
-    # every matching link, newest first, no pagination - for a full csv export
+    # every matching link, no pagination - for a full csv export
     stmt = _filtered(
         select(Link), status, q, min_clicks, max_clicks, created_after, created_before,
         clicked_after, clicked_before, expires_after, expires_before,
-    ).order_by(Link.created_at.desc(), Link.id.desc())
+    ).order_by(_order_for(sort), Link.id.desc())
     result = await session.execute(stmt)
     return list(result.scalars().all())
 

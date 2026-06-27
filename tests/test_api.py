@@ -1,4 +1,5 @@
-﻿from datetime import datetime, timedelta, timezone
+﻿import csv
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -895,6 +896,25 @@ async def test_export_links_csv_respects_filter(client):
     assert "example.com/y" not in res.text
 
     assert (await client.get("/api/links.csv?status=bogus")).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_export_links_csv_sort_by_clicks(client):
+    codes = {}
+    for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):
+        res = await client.post("/api/shorten", json={"url": url})
+        codes[url] = res.json()["short_code"]
+
+    for _ in range(3):
+        await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links.csv?sort=clicks")
+    rows = list(csv.reader(res.text.splitlines()))
+    urls = [r[2] for r in rows[1:]]  # original_url column, skip header
+    assert urls == ["https://b.example.com", "https://a.example.com", "https://c.example.com"]
+
+    assert (await client.get("/api/links.csv?sort=bogus")).status_code == 400
 
 
 @pytest.mark.asyncio
