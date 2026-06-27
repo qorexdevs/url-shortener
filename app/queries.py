@@ -30,6 +30,14 @@ def _filtered(
         stmt = stmt.where(Link.clicks == 0)
     elif status == "used":
         stmt = stmt.where(Link.clicks > 0)
+    elif status == "expiring":
+        # live links whose ttl runs out within 24h - matches the summary's expiring_soon count
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        stmt = stmt.where(
+            Link.expires_at.is_not(None),
+            Link.expires_at > now,
+            Link.expires_at <= now + timedelta(hours=24),
+        )
     elif status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)

@@ -1033,6 +1033,25 @@ async def test_list_links_filter_by_used(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_expiring(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://soon.example.com", short_code="soon0001",
+                 expires_at=now + timedelta(hours=12)),
+            Link(original_url="https://later.example.com", short_code="late0001",
+                 expires_at=now + timedelta(hours=48)),
+            Link(original_url="https://gone.example.com", short_code="gone0001",
+                 expires_at=now - timedelta(hours=1)),
+            Link(original_url="https://forever.example.com", short_code="ever0001"),
+        ])
+        await session.commit()
+
+    expiring = await client.get("/api/links?status=expiring")
+    assert [x["original_url"] for x in expiring.json()] == ["https://soon.example.com"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(
