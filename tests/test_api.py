@@ -1565,7 +1565,7 @@ async def test_summary_empty(client):
     assert res.status_code == 200
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
-        "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0,
+        "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0, "exhausted": 0,
         "avg_clicks": 0.0, "busiest": None, "busiest_clicks": 0, "busiest_share": 0.0,
     }
 
@@ -1592,7 +1592,7 @@ async def test_summary_counts(client):
     res = await client.get("/api/summary")
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
-        "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5,
+        "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5, "exhausted": 0,
         "avg_clicks": 2.2, "busiest": "dead0001", "busiest_clicks": 5, "busiest_share": 0.45,
     }
 
@@ -1610,6 +1610,25 @@ async def test_summary_created_recently_excludes_old(client):
 
     res = await client.get("/api/summary")
     assert res.json()["created_recently"] == 1
+
+
+@pytest.mark.asyncio
+async def test_summary_counts_exhausted(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            # spent its limit -> counted
+            Link(original_url="https://spent.example.com", short_code="spent001",
+                 click_limit=2, clicks=2),
+            # has room left -> not counted
+            Link(original_url="https://room.example.com", short_code="room0001",
+                 click_limit=5, clicks=1),
+            # no limit at all -> not counted
+            Link(original_url="https://free.example.com", short_code="free0001", clicks=9),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/summary")
+    assert res.json()["exhausted"] == 1
 
 
 @pytest.mark.asyncio
