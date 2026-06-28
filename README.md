@@ -25,6 +25,7 @@
 - QR code generation for any link
 - Link preview to see a destination without counting a click
 - Link expiration via `ttl_hours`
+- Click-limited links via `click_limit` for one-time or capped-use codes
 - Permanent (308) redirects opt-in, temporary (307) by default
 - Optional query forwarding so a click's `?utm_source=...` reaches the destination
 - Idempotent shorten with `reuse` to dedupe the same URL

@@ -19,6 +19,7 @@ from app.queries import (
     delete_expired,
     find_link,
     find_live_by_url,
+    link_exhausted,
     link_expired,
     list_links,
     summary_stats,
@@ -81,6 +82,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
                 expires_at=existing.expires_at,
                 permanent=existing.permanent,
                 forward_query=existing.forward_query,
+                click_limit=existing.click_limit,
                 reused=True,
             )
 
@@ -90,6 +92,9 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
         raise HTTPException(
             status_code=400, detail=f"ttl_hours must be at most {MAX_TTL_HOURS}"
         )
+
+    if data.click_limit is not None and data.click_limit <= 0:
+        raise HTTPException(status_code=400, detail="click_limit must be greater than 0")
 
     code = None
 
@@ -126,6 +131,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
         expires_at=expires_at,
         permanent=data.permanent,
         forward_query=data.forward_query,
+        click_limit=data.click_limit,
     )
     session.add(link)
     try:
@@ -142,6 +148,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
         expires_at=expires_at,
         permanent=link.permanent,
         forward_query=link.forward_query,
+        click_limit=link.click_limit,
     )
 
 @router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
@@ -252,6 +259,8 @@ async def list_all_links(
             expired=link_expired(link),
             permanent=link.permanent,
             forward_query=link.forward_query,
+            click_limit=link.click_limit,
+            exhausted=link_exhausted(link),
         )
         for link in links
     ]
@@ -335,6 +344,8 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         expired=expired,
         permanent=link.permanent,
         forward_query=link.forward_query,
+        click_limit=link.click_limit,
+        exhausted=link_exhausted(link),
     )
 
 @router.get("/api/preview/{code}", response_model=LinkPreview)
@@ -351,6 +362,8 @@ async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
         clicks=link.clicks,
         expires_at=link.expires_at,
         expired=link_expired(link),
+        click_limit=link.click_limit,
+        exhausted=link_exhausted(link),
     )
 
 @router.get("/api/qr/{code}")
@@ -410,9 +423,11 @@ async def retarget_link(
         and data.ttl_hours is None
         and data.permanent is None
         and data.forward_query is None
+        and data.click_limit is None
     ):
         raise HTTPException(
-            status_code=400, detail="Provide url, ttl_hours, permanent or forward_query"
+            status_code=400,
+            detail="Provide url, ttl_hours, permanent, forward_query or click_limit",
         )
 
     if data.ttl_hours is not None and data.permanent:
@@ -444,6 +459,11 @@ async def retarget_link(
     if data.forward_query is not None:
         link.forward_query = data.forward_query
 
+    if data.click_limit is not None:
+        if data.click_limit <= 0:
+            raise HTTPException(status_code=400, detail="click_limit must be greater than 0")
+        link.click_limit = data.click_limit
+
     await session.commit()
 
     short_path = link.custom_alias or link.short_code
@@ -458,6 +478,8 @@ async def retarget_link(
         expired=link_expired(link),
         permanent=link.permanent,
         forward_query=link.forward_query,
+        click_limit=link.click_limit,
+        exhausted=link_exhausted(link),
     )
 
 @router.delete("/api/expired")
@@ -512,6 +534,8 @@ async def redirect_to_url(
             clicks=link.clicks,
             expires_at=link.expires_at,
             expired=link_expired(link),
+            click_limit=link.click_limit,
+            exhausted=link_exhausted(link),
         )
 
     link = await find_link(session, code)
@@ -520,6 +544,9 @@ async def redirect_to_url(
 
     if link_expired(link):
         raise HTTPException(status_code=410, detail="Link has expired")
+
+    if link_exhausted(link):
+        raise HTTPException(status_code=410, detail="Link has reached its click limit")
 
     # HEAD is how link checkers and unfurlers probe a link without visiting it, so
     # don't count it as a click. the redirect headers still come back.

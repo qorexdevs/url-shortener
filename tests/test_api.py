@@ -1678,3 +1678,74 @@ async def test_shorten_reuse_ignores_expired_link(client):
     )
     assert res.json()["short_code"] != "exp00001"
     assert res.json()["reused"] is False
+
+
+@pytest.mark.asyncio
+async def test_click_limit_stops_after_cap(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 2}
+    )
+    assert res.json()["click_limit"] == 2
+    code = res.json()["short_code"]
+
+    for _ in range(2):
+        r = await client.get(f"/{code}", follow_redirects=False)
+        assert r.status_code == 307
+    r = await client.get(f"/{code}", follow_redirects=False)
+    assert r.status_code == 410
+
+
+@pytest.mark.asyncio
+async def test_no_click_limit_never_exhausts(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    assert res.json()["click_limit"] is None
+    code = res.json()["short_code"]
+    for _ in range(5):
+        r = await client.get(f"/{code}", follow_redirects=False)
+        assert r.status_code == 307
+
+
+@pytest.mark.asyncio
+async def test_head_does_not_burn_click_limit(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+    # a HEAD probe shouldn't spend the single allowed click
+    r = await client.head(f"/{code}", follow_redirects=False)
+    assert r.status_code == 307
+    r = await client.get(f"/{code}", follow_redirects=False)
+    assert r.status_code == 307
+
+
+@pytest.mark.asyncio
+async def test_shorten_rejects_zero_click_limit(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 0}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_stats_report_exhausted(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}", follow_redirects=False)
+    res = await client.get(f"/api/stats/{code}")
+    body = res.json()
+    assert body["click_limit"] == 1
+    assert body["exhausted"] is True
+
+
+@pytest.mark.asyncio
+async def test_retarget_sets_click_limit(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    res = await client.patch(f"/api/links/{code}", json={"click_limit": 1})
+    assert res.status_code == 200
+    assert res.json()["click_limit"] == 1
+    await client.get(f"/{code}", follow_redirects=False)
+    r = await client.get(f"/{code}", follow_redirects=False)
+    assert r.status_code == 410

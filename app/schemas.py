@@ -9,6 +9,7 @@ class ShortenRequest(BaseModel):
     permanent: bool = False
     reuse: bool = False
     forward_query: bool = False
+    click_limit: int | None = None
 
 class ShortenResponse(BaseModel):
     original_url: str
@@ -18,6 +19,7 @@ class ShortenResponse(BaseModel):
     permanent: bool = False
     reused: bool = False
     forward_query: bool = False
+    click_limit: int | None = None
 
 class BulkShortenRequest(BaseModel):
     urls: list[ShortenRequest]
@@ -46,6 +48,7 @@ class RetargetRequest(BaseModel):
     ttl_hours: int | None = None
     permanent: bool | None = None
     forward_query: bool | None = None
+    click_limit: int | None = None
 
 class LinkPreview(BaseModel):
     short_url: str
@@ -53,6 +56,8 @@ class LinkPreview(BaseModel):
     clicks: int = 0
     expires_at: datetime | None = None
     expired: bool = False
+    click_limit: int | None = None
+    exhausted: bool = False
 
 class Summary(BaseModel):
     total_links: int
@@ -80,3 +85,5 @@ class LinkStats(BaseModel):
     expired: bool = False
     permanent: bool = False
     forward_query: bool = False
+    click_limit: int | None = None
+    exhausted: bool = False

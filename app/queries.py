@@ -10,6 +10,11 @@ def link_expired(link: Link) -> bool:
         return False
     return link.expires_at <= datetime.now(timezone.utc).replace(tzinfo=None)
 
+def link_exhausted(link: Link) -> bool:
+    if link.click_limit is None:
+        return False
+    return link.clicks >= link.click_limit
+
 async def delete_expired(session: AsyncSession) -> int:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     result = await session.execute(
