@@ -224,10 +224,10 @@ async def list_all_links(
     clicked_bef = _parse_created(clicked_before, "clicked_before")
     expires_aft = _parse_created(expires_after, "expires_after")
     expires_bef = _parse_created(expires_before, "expires_before")
-    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code"):
+    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"):
         raise HTTPException(
             status_code=400,
-            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring' or 'code'",
+            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring', 'code' or 'remaining'",
         )
     if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "expiring"):
         raise HTTPException(
@@ -281,10 +281,10 @@ async def export_links_csv(
             status_code=400,
             detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted' or 'expiring'",
         )
-    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code"):
+    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"):
         raise HTTPException(
             status_code=400,
-            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring' or 'code'",
+            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring', 'code' or 'remaining'",
         )
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")

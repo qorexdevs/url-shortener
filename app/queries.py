@@ -93,6 +93,10 @@ def _order_for(sort: str):
     if sort == "code":
         # alphabetical by the path people actually see - the alias if set, else the code
         return func.coalesce(Link.custom_alias, Link.short_code).asc()
+    if sort == "remaining":
+        # capped links by clicks left, tightest budget first; unlimited links
+        # have no cap so they fall to the bottom
+        return (Link.click_limit - Link.clicks).asc().nulls_last()
     return Link.created_at.desc()
 
 async def list_links(

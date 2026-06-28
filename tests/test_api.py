@@ -1036,6 +1036,25 @@ async def test_list_links_sort_by_code(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_remaining(client):
+    codes = {}
+    # a has 9 clicks left, b has 2, c is uncapped
+    for url, limit in (("https://a.example.com", 10), ("https://b.example.com", 5),
+                       ("https://c.example.com", None)):
+        res = await client.post("/api/shorten", json={"url": url, "click_limit": limit})
+        codes[url] = res.json()["short_code"]
+    await client.get(f"/{codes['https://a.example.com']}", follow_redirects=False)
+    for _ in range(3):
+        await client.get(f"/{codes['https://b.example.com']}", follow_redirects=False)
+
+    res = await client.get("/api/links?sort=remaining")
+    assert res.status_code == 200
+    urls = [item["original_url"] for item in res.json()]
+    # tightest budget first, uncapped link last
+    assert urls == ["https://b.example.com", "https://a.example.com", "https://c.example.com"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_status(client):
     await client.post("/api/shorten", json={"url": "https://live.example.com"})
     past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
