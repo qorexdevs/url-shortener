@@ -191,6 +191,7 @@ GET /api/links?status=expired     ->  only links past their ttl
 GET /api/links?status=permanent   ->  only permanent 308 links
 GET /api/links?status=unused      ->  only links nobody has clicked yet
 GET /api/links?status=used        ->  only links with at least one click
+GET /api/links?status=exhausted   ->  only links that spent their click limit and now 410
 GET /api/links?status=expiring    ->  only live links whose ttl runs out within 24h
 GET /api/links?q=github           ->  match the destination url, code or alias
 GET /api/links?min_clicks=10      ->  only links with at least that many clicks

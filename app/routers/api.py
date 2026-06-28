@@ -229,10 +229,10 @@ async def list_all_links(
             status_code=400,
             detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring' or 'code'",
         )
-    if status not in ("all", "active", "expired", "permanent", "unused", "used", "expiring"):
+    if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "expiring"):
         raise HTTPException(
             status_code=400,
-            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used' or 'expiring'",
+            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted' or 'expiring'",
         )
 
     q = q.strip()
@@ -276,10 +276,10 @@ async def export_links_csv(
 ):
     # full export of the matching links as csv, same status/q/sort filters as
     # the list, no pagination - for a backup or a spreadsheet
-    if status not in ("all", "active", "expired", "permanent", "unused", "used", "expiring"):
+    if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "expiring"):
         raise HTTPException(
             status_code=400,
-            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used' or 'expiring'",
+            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted' or 'expiring'",
         )
     if sort not in ("created", "clicks", "recent", "stale", "expiring", "code"):
         raise HTTPException(

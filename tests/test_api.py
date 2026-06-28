@@ -1104,6 +1104,24 @@ async def test_list_links_filter_by_expiring(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_exhausted(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://spent.example.com", short_code="spnt0001",
+                 click_limit=2, clicks=2),
+            Link(original_url="https://room.example.com", short_code="room0001",
+                 click_limit=5, clicks=1),
+            Link(original_url="https://free.example.com", short_code="free0001",
+                 clicks=9),
+        ])
+        await session.commit()
+
+    exhausted = await client.get("/api/links?status=exhausted")
+    assert [x["original_url"] for x in exhausted.json()] == ["https://spent.example.com"]
+    assert all(x["exhausted"] for x in exhausted.json())
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(
