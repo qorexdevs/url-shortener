@@ -26,6 +26,7 @@
 - Link preview to see a destination without counting a click
 - Link expiration via `ttl_hours`
 - Permanent (308) redirects opt-in, temporary (307) by default
+- Optional query forwarding so a click's `?utm_source=...` reaches the destination
 - Idempotent shorten with `reuse` to dedupe the same URL
 - Reserved aliases block route collisions
 - URL validation allows only `http://` and `https://` schemes

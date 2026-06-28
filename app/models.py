@@ -16,3 +16,4 @@ class Link(Base):
     last_clicked = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     permanent = Column(Boolean, nullable=False, default=False)
+    forward_query = Column(Boolean, nullable=False, default=False)

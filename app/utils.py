@@ -1,7 +1,7 @@
 import re
 import secrets
 import string
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import validators
 
@@ -74,6 +74,19 @@ def normalize_url(url: str) -> str:
     if parsed.port is not None and parsed.port != default_port:
         netloc += f":{parsed.port}"
     return urlunsplit((parsed.scheme.lower(), netloc, parsed.path, parsed.query, parsed.fragment))
+
+def merge_query(url: str, incoming: str) -> str:
+    # tack the click's query string onto the destination so campaign params like
+    # ?utm_source=x survive the redirect. on a key clash the incoming value wins,
+    # since it's the one the visitor actually arrived with
+    if not incoming:
+        return url
+    parsed = urlsplit(url)
+    params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    params.update(parse_qsl(incoming, keep_blank_values=True))
+    return urlunsplit(
+        (parsed.scheme, parsed.netloc, parsed.path, urlencode(params), parsed.fragment)
+    )
 
 def validate_alias(alias: str | None) -> bool:
     if not alias or len(alias) < 3 or len(alias) > 30:

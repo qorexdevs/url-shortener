@@ -1,4 +1,27 @@
-﻿from app.utils import generate_short_code, normalize_url, validate_alias, validate_url
+﻿from app.utils import (
+    generate_short_code,
+    merge_query,
+    normalize_url,
+    validate_alias,
+    validate_url,
+)
+
+
+def test_merge_query_appends_to_bare_url():
+    assert merge_query("https://x.com/a", "utm_source=tw") == "https://x.com/a?utm_source=tw"
+
+
+def test_merge_query_empty_incoming_is_noop():
+    assert merge_query("https://x.com/a?b=1", "") == "https://x.com/a?b=1"
+
+
+def test_merge_query_incoming_wins_on_clash():
+    out = merge_query("https://x.com?ref=site&keep=1", "ref=mail")
+    assert out == "https://x.com?ref=mail&keep=1"
+
+
+def test_merge_query_keeps_fragment():
+    assert merge_query("https://x.com/a#top", "q=1") == "https://x.com/a?q=1#top"
 
 
 def test_generate_short_code_default_length():

@@ -39,6 +39,7 @@ from app.schemas import (
 from app.utils import (
     RESERVED_ALIASES,
     generate_short_code,
+    merge_query,
     normalize_url,
     validate_alias,
     validate_url,
@@ -79,6 +80,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
                 short_code=existing.short_code,
                 expires_at=existing.expires_at,
                 permanent=existing.permanent,
+                forward_query=existing.forward_query,
                 reused=True,
             )
 
@@ -123,6 +125,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
         custom_alias=alias,
         expires_at=expires_at,
         permanent=data.permanent,
+        forward_query=data.forward_query,
     )
     session.add(link)
     try:
@@ -138,6 +141,7 @@ async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenRe
         short_code=code,
         expires_at=expires_at,
         permanent=link.permanent,
+        forward_query=link.forward_query,
     )
 
 @router.post("/api/shorten", response_model=ShortenResponse, status_code=201)
@@ -247,6 +251,7 @@ async def list_all_links(
             expires_at=link.expires_at,
             expired=link_expired(link),
             permanent=link.permanent,
+            forward_query=link.forward_query,
         )
         for link in links
     ]
@@ -329,6 +334,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         expires_at=link.expires_at,
         expired=expired,
         permanent=link.permanent,
+        forward_query=link.forward_query,
     )
 
 @router.get("/api/preview/{code}", response_model=LinkPreview)
@@ -399,8 +405,15 @@ async def retarget_link(
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    if data.url is None and data.ttl_hours is None and data.permanent is None:
-        raise HTTPException(status_code=400, detail="Provide url, ttl_hours or permanent")
+    if (
+        data.url is None
+        and data.ttl_hours is None
+        and data.permanent is None
+        and data.forward_query is None
+    ):
+        raise HTTPException(
+            status_code=400, detail="Provide url, ttl_hours, permanent or forward_query"
+        )
 
     if data.ttl_hours is not None and data.permanent:
         raise HTTPException(
@@ -428,6 +441,9 @@ async def retarget_link(
         if data.permanent:
             link.expires_at = None
 
+    if data.forward_query is not None:
+        link.forward_query = data.forward_query
+
     await session.commit()
 
     short_path = link.custom_alias or link.short_code
@@ -441,6 +457,7 @@ async def retarget_link(
         expires_at=link.expires_at,
         expired=link_expired(link),
         permanent=link.permanent,
+        forward_query=link.forward_query,
     )
 
 @router.delete("/api/expired")
@@ -511,7 +528,13 @@ async def redirect_to_url(
         link.last_clicked = datetime.now(timezone.utc).replace(tzinfo=None)
         await session.commit()
 
+    # carry the visitor's query string onto the destination when the link opts in,
+    # so a campaign tag on the short link reaches the target
+    dest = link.original_url
+    if link.forward_query and request.url.query:
+        dest = merge_query(dest, request.url.query)
+
     # 308 lets browsers cache a permanent link, so later hits skip the server and
     # stop counting clicks. that's the tradeoff you opt into with permanent=true.
     status = 308 if link.permanent else 307
-    return RedirectResponse(url=link.original_url, status_code=status)
+    return RedirectResponse(url=dest, status_code=status)

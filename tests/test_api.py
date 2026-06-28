@@ -263,6 +263,38 @@ async def test_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_query_not_forwarded_by_default(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com/p"})
+    assert res.json()["forward_query"] is False
+    code = res.json()["short_code"]
+    res = await client.get(f"/{code}?utm_source=tw", follow_redirects=False)
+    assert res.headers["location"] == "https://example.com/p"
+
+
+@pytest.mark.asyncio
+async def test_forward_query_carries_params_to_destination(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com/p?a=1", "forward_query": True}
+    )
+    assert res.json()["forward_query"] is True
+    code = res.json()["short_code"]
+    res = await client.get(f"/{code}?utm_source=tw&a=2", follow_redirects=False)
+    # destination keeps its own params, the click's value wins on a clash
+    assert res.headers["location"] == "https://example.com/p?a=2&utm_source=tw"
+
+
+@pytest.mark.asyncio
+async def test_retarget_toggles_forward_query(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    res = await client.patch(f"/api/links/{code}", json={"forward_query": True})
+    assert res.status_code == 200
+    assert res.json()["forward_query"] is True
+    res = await client.get(f"/{code}?ref=x", follow_redirects=False)
+    assert res.headers["location"] == "https://example.com?ref=x"
+
+
+@pytest.mark.asyncio
 async def test_permanent_link_redirects_with_308(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "permanent": True}
