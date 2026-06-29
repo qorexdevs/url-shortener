@@ -173,6 +173,7 @@ GET /api/summary
   "expiring_soon": 4,
   "created_recently": 6,
   "exhausted": 3,
+  "capped": 9,
   "avg_clicks": 32.0,
   "busiest": "abc123",
   "busiest_clicks": 412,
@@ -180,7 +181,7 @@ GET /api/summary
 }
 ```
 
-Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past. `unused` is links with no clicks, `custom` is links created with a custom alias. `expiring_soon` is the live links whose ttl runs out within the next 24h - the ones worth a heads-up before they go dark. `created_recently` is the links made in the last 24h, the counterpart to `expiring_soon`. `exhausted` is the links that spent their click limit and now 410, matching the `status=exhausted` list filter. `avg_clicks` is the mean clicks per link, `busiest` is the code of the most clicked one (`null` when there are no links), `busiest_clicks` is its click count (`0` when there are none) and `busiest_share` is the fraction of all clicks that link pulls (`0..1`), a quick read on how concentrated traffic is.
+Totals across every link in one call, for a dashboard header. `active` and `expired` exclude permanent links, which have no ttl to be past. `unused` is links with no clicks, `custom` is links created with a custom alias. `expiring_soon` is the live links whose ttl runs out within the next 24h - the ones worth a heads-up before they go dark. `created_recently` is the links made in the last 24h, the counterpart to `expiring_soon`. `exhausted` is the links that spent their click limit and now 410, matching the `status=exhausted` list filter, and `capped` is every link with a click limit set whether or not it's spent (matching `status=capped`), so `exhausted`/`capped` reads as "spent of total capped". `avg_clicks` is the mean clicks per link, `busiest` is the code of the most clicked one (`null` when there are no links), `busiest_clicks` is its click count (`0` when there are none) and `busiest_share` is the fraction of all clicks that link pulls (`0..1`), a quick read on how concentrated traffic is.
 
 ### List Links
 

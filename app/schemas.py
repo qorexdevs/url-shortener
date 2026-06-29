@@ -71,6 +71,7 @@ class Summary(BaseModel):
     expiring_soon: int
     created_recently: int
     exhausted: int = 0
+    capped: int = 0
     avg_clicks: float
     busiest: str | None
     busiest_clicks: int = 0

@@ -183,12 +183,15 @@ async def summary_stats(session: AsyncSession) -> dict:
                 func.count().filter(
                     Link.click_limit.is_not(None), Link.clicks >= Link.click_limit
                 ),
+                # every link with a click limit set, spent or not - the denominator
+                # that makes exhausted readable ("3 of 8 capped links spent")
+                func.count().filter(Link.click_limit.is_not(None)),
             )
         )
     ).one()
     (
         total, clicks, permanent, expired, unused, custom,
-        expiring_soon, created_recently, exhausted,
+        expiring_soon, created_recently, exhausted, capped,
     ) = row
     top = (
         await session.execute(
@@ -208,6 +211,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "expiring_soon": expiring_soon,
         "created_recently": created_recently,
         "exhausted": exhausted,
+        "capped": capped,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
         "busiest_clicks": busiest_clicks,
