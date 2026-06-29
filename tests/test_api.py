@@ -1141,6 +1141,25 @@ async def test_list_links_filter_by_exhausted(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_capped(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://spent.example.com", short_code="spnt0002",
+                 click_limit=2, clicks=2),
+            Link(original_url="https://room.example.com", short_code="room0002",
+                 click_limit=5, clicks=1),
+            Link(original_url="https://free.example.com", short_code="free0002",
+                 clicks=9),
+        ])
+        await session.commit()
+
+    capped = await client.get("/api/links?status=capped")
+    urls = {x["original_url"] for x in capped.json()}
+    assert urls == {"https://spent.example.com", "https://room.example.com"}
+    assert all(x["click_limit"] is not None for x in capped.json())
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(
