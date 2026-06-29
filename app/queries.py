@@ -90,6 +90,9 @@ def _filtered(
         )
     return stmt
 
+SORTS = ("created", "clicks", "recent", "stale", "expiring", "code", "remaining")
+
+
 def _order_for(sort: str):
     if sort == "clicks":
         return Link.clicks.desc()

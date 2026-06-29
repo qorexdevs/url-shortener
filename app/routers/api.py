@@ -14,6 +14,7 @@ from app.config import BASE_URL, MAX_TTL_HOURS
 from app.database import get_session
 from app.models import Link
 from app.queries import (
+    SORTS,
     all_links,
     count_links,
     delete_expired,
@@ -225,10 +226,10 @@ async def list_all_links(
     clicked_bef = _parse_created(clicked_before, "clicked_before")
     expires_aft = _parse_created(expires_after, "expires_after")
     expires_bef = _parse_created(expires_before, "expires_before")
-    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"):
+    if sort not in SORTS:
         raise HTTPException(
             status_code=400,
-            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring', 'code' or 'remaining'",
+            detail=f"sort must be one of: {', '.join(SORTS)}",
         )
     if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "capped", "expiring"):
         raise HTTPException(
@@ -283,10 +284,10 @@ async def export_links_csv(
             status_code=400,
             detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted', 'capped' or 'expiring'",
         )
-    if sort not in ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"):
+    if sort not in SORTS:
         raise HTTPException(
             status_code=400,
-            detail="sort must be 'created', 'clicks', 'recent', 'stale', 'expiring', 'code' or 'remaining'",
+            detail=f"sort must be one of: {', '.join(SORTS)}",
         )
     if min_clicks < 0:
         raise HTTPException(status_code=400, detail="min_clicks must be 0 or greater")
