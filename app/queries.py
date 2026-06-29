@@ -92,6 +92,12 @@ def _filtered(
 
 SORTS = ("created", "clicks", "recent", "stale", "expiring", "code", "remaining")
 
+# every status _filtered understands, in the order shown to the client
+STATUSES = (
+    "all", "active", "expired", "permanent",
+    "unused", "used", "exhausted", "capped", "expiring",
+)
+
 
 def _order_for(sort: str):
     if sort == "clicks":

@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Link
+from app.queries import STATUSES
 from conftest import test_session as db_session_factory
 
 
@@ -1073,6 +1074,16 @@ async def test_list_links_filter_by_status(client):
 
     assert len((await client.get("/api/links")).json()) == 2
     assert (await client.get("/api/links?status=bogus")).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_every_status_accepted_by_both_endpoints(client):
+    # the whitelist both endpoints validate against must stay in step with the
+    # statuses _filtered actually understands - a stray value would 400 here
+    await client.post("/api/shorten", json={"url": "https://example.com"})
+    for status in STATUSES:
+        assert (await client.get(f"/api/links?status={status}")).status_code == 200
+        assert (await client.get(f"/api/links.csv?status={status}")).status_code == 200
 
 
 @pytest.mark.asyncio

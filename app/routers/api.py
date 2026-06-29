@@ -15,6 +15,7 @@ from app.database import get_session
 from app.models import Link
 from app.queries import (
     SORTS,
+    STATUSES,
     all_links,
     count_links,
     delete_expired,
@@ -231,10 +232,10 @@ async def list_all_links(
             status_code=400,
             detail=f"sort must be one of: {', '.join(SORTS)}",
         )
-    if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "capped", "expiring"):
+    if status not in STATUSES:
         raise HTTPException(
             status_code=400,
-            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted', 'capped' or 'expiring'",
+            detail=f"status must be one of: {', '.join(STATUSES)}",
         )
 
     q = q.strip()
@@ -279,10 +280,10 @@ async def export_links_csv(
 ):
     # full export of the matching links as csv, same status/q/sort filters as
     # the list, no pagination - for a backup or a spreadsheet
-    if status not in ("all", "active", "expired", "permanent", "unused", "used", "exhausted", "capped", "expiring"):
+    if status not in STATUSES:
         raise HTTPException(
             status_code=400,
-            detail="status must be 'all', 'active', 'expired', 'permanent', 'unused', 'used', 'exhausted', 'capped' or 'expiring'",
+            detail=f"status must be one of: {', '.join(STATUSES)}",
         )
     if sort not in SORTS:
         raise HTTPException(
