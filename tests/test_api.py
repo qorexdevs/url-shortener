@@ -798,6 +798,44 @@ async def test_stats_page_shows_expired_at_boundary(client):
 
 
 @pytest.mark.asyncio
+async def test_stats_page_shows_clicks_left_for_capped_link(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 3}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}")
+
+    res = await client.get(f"/stats/{code}")
+    assert res.status_code == 200
+    assert "Click Limit" in res.text
+    assert "1 / 3 used" in res.text
+    assert "2 left" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_marks_exhausted_capped_link(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}")
+
+    res = await client.get(f"/stats/{code}")
+    assert res.status_code == 200
+    assert "(spent)" in res.text
+
+
+@pytest.mark.asyncio
+async def test_stats_page_hides_click_limit_for_unlimited_link(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+
+    res = await client.get(f"/stats/{code}")
+    assert res.status_code == 200
+    assert "Click Limit" not in res.text
+
+
+@pytest.mark.asyncio
 async def test_stats_page_short_url_uses_custom_alias(client):
     await client.post(
         "/api/shorten", json={"url": "https://github.com", "custom_alias": "gh-link"}

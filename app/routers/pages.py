@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import BASE_URL
 from app.database import get_session
-from app.queries import find_link, list_links, summary_stats
+from app.queries import find_link, link_exhausted, link_remaining, list_links, summary_stats
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -42,5 +42,7 @@ async def stats_page(request: Request, code: str, session: AsyncSession = Depend
             "short_path": short_path,
             "base_url": BASE_URL,
             "expired": expired,
+            "remaining": link_remaining(link),
+            "exhausted": link_exhausted(link),
         },
     )

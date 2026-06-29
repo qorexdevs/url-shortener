@@ -27,6 +27,15 @@
             {% endif %}
         </span>
     </div>
+    {% if remaining is not none %}
+    <div class="stat-row">
+        <span class="stat-label">Click Limit</span>
+        <span class="stat-value">
+            {{ link.clicks }} / {{ link.click_limit }} used
+            {% if exhausted %}(spent){% else %}- {{ remaining }} left{% endif %}
+        </span>
+    </div>
+    {% endif %}
     <div class="stats-grid">
         <div class="stat-box">
             <span class="stat-number">{{ link.clicks }}</span>
