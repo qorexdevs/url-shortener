@@ -146,9 +146,14 @@ GET /api/stats/{code}
   "created_at": "2025-01-01T00:00:00",
   "last_clicked": "2025-01-02T12:30:00",
   "expires_at": "2025-01-02T00:00:00",
-  "expired": false
+  "expired": false,
+  "click_limit": 100,
+  "exhausted": false,
+  "remaining": 58
 }
 ```
+
+`remaining` is how many clicks are left before a capped link starts to 410, `null` when the link has no `click_limit`. It floors at 0 once `exhausted`.
 
 ### Summary
 
@@ -228,7 +233,10 @@ GET /api/preview/{code}
   "original_url": "https://example.com/very/long/url",
   "clicks": 42,
   "expires_at": "2025-01-02T00:00:00",
-  "expired": false
+  "expired": false,
+  "click_limit": 100,
+  "exhausted": false,
+  "remaining": 58
 }
 ```
 

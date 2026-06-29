@@ -58,6 +58,7 @@ class LinkPreview(BaseModel):
     expired: bool = False
     click_limit: int | None = None
     exhausted: bool = False
+    remaining: int | None = None
 
 class Summary(BaseModel):
     total_links: int
@@ -88,3 +89,4 @@ class LinkStats(BaseModel):
     forward_query: bool = False
     click_limit: int | None = None
     exhausted: bool = False
+    remaining: int | None = None

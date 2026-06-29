@@ -21,6 +21,7 @@ from app.queries import (
     find_live_by_url,
     link_exhausted,
     link_expired,
+    link_remaining,
     list_links,
     summary_stats,
 )
@@ -261,6 +262,7 @@ async def list_all_links(
             forward_query=link.forward_query,
             click_limit=link.click_limit,
             exhausted=link_exhausted(link),
+            remaining=link_remaining(link),
         )
         for link in links
     ]
@@ -346,6 +348,7 @@ async def get_stats(code: str, session: AsyncSession = Depends(get_session)):
         forward_query=link.forward_query,
         click_limit=link.click_limit,
         exhausted=link_exhausted(link),
+        remaining=link_remaining(link),
     )
 
 @router.get("/api/preview/{code}", response_model=LinkPreview)
@@ -364,6 +367,7 @@ async def preview_link(code: str, session: AsyncSession = Depends(get_session)):
         expired=link_expired(link),
         click_limit=link.click_limit,
         exhausted=link_exhausted(link),
+        remaining=link_remaining(link),
     )
 
 @router.get("/api/qr/{code}")
@@ -480,6 +484,7 @@ async def retarget_link(
         forward_query=link.forward_query,
         click_limit=link.click_limit,
         exhausted=link_exhausted(link),
+        remaining=link_remaining(link),
     )
 
 @router.delete("/api/expired")
@@ -536,6 +541,7 @@ async def redirect_to_url(
             expired=link_expired(link),
             click_limit=link.click_limit,
             exhausted=link_exhausted(link),
+            remaining=link_remaining(link),
         )
 
     link = await find_link(session, code)

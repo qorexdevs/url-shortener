@@ -15,6 +15,13 @@ def link_exhausted(link: Link) -> bool:
         return False
     return link.clicks >= link.click_limit
 
+def link_remaining(link: Link) -> int | None:
+    # clicks left before a capped link starts to 410, None when it has no cap.
+    # clamped at 0 so an over-counted link reports 0 rather than a negative
+    if link.click_limit is None:
+        return None
+    return max(0, link.click_limit - link.clicks)
+
 async def delete_expired(session: AsyncSession) -> int:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     result = await session.execute(

@@ -1815,6 +1815,49 @@ async def test_stats_report_exhausted(client):
 
 
 @pytest.mark.asyncio
+async def test_stats_report_remaining(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 3}
+    )
+    code = res.json()["short_code"]
+    body = (await client.get(f"/api/stats/{code}")).json()
+    assert body["remaining"] == 3
+    await client.get(f"/{code}", follow_redirects=False)
+    body = (await client.get(f"/api/stats/{code}")).json()
+    assert body["remaining"] == 2
+
+
+@pytest.mark.asyncio
+async def test_exhausted_link_reports_zero_remaining(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}", follow_redirects=False)
+    body = (await client.get(f"/api/stats/{code}")).json()
+    assert body["exhausted"] is True
+    assert body["remaining"] == 0
+
+
+@pytest.mark.asyncio
+async def test_uncapped_link_has_null_remaining(client):
+    res = await client.post("/api/shorten", json={"url": "https://example.com"})
+    code = res.json()["short_code"]
+    assert (await client.get(f"/api/stats/{code}")).json()["remaining"] is None
+    assert (await client.get(f"/api/preview/{code}")).json()["remaining"] is None
+
+
+@pytest.mark.asyncio
+async def test_preview_reports_remaining(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 5}
+    )
+    code = res.json()["short_code"]
+    assert (await client.get(f"/api/preview/{code}")).json()["remaining"] == 5
+    assert (await client.get(f"/{code}+")).json()["remaining"] == 5
+
+
+@pytest.mark.asyncio
 async def test_retarget_sets_click_limit(client):
     res = await client.post("/api/shorten", json={"url": "https://example.com"})
     code = res.json()["short_code"]
