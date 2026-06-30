@@ -402,6 +402,9 @@ async def get_qr_code(
     if link_expired(link):
         raise HTTPException(status_code=410, detail="Link has expired")
 
+    if link_exhausted(link):
+        raise HTTPException(status_code=410, detail="Link has reached its click limit")
+
     short_path = link.custom_alias or link.short_code
     short_url = f"{BASE_URL}/{short_path}"
     buf = BytesIO()

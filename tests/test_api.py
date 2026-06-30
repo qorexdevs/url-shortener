@@ -741,6 +741,18 @@ async def test_expired_qr_code_returns_410(client):
 
 
 @pytest.mark.asyncio
+async def test_exhausted_qr_code_returns_410(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}")
+
+    res = await client.get(f"/api/qr/{code}")
+    assert res.status_code == 410
+
+
+@pytest.mark.asyncio
 async def test_qr_code_not_found(client):
     res = await client.get("/api/qr/nope")
     assert res.status_code == 404
