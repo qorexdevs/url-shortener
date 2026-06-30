@@ -989,6 +989,29 @@ async def test_export_links_csv_sort_by_clicks(client):
 
 
 @pytest.mark.asyncio
+async def test_export_links_csv_includes_click_limit(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://capped.example.com", "click_limit": 2}
+    )
+    code = res.json()["short_code"]
+    await client.get(f"/{code}", follow_redirects=False)
+    await client.post("/api/shorten", json={"url": "https://uncapped.example.com"})
+
+    res = await client.get("/api/links.csv")
+    rows = list(csv.reader(res.text.splitlines()))
+    header = rows[0]
+    assert header[-4:] == ["forward_query", "click_limit", "remaining", "exhausted"]
+    by_url = {r[2]: r for r in rows[1:]}
+    capped = by_url["https://capped.example.com"]
+    assert capped[header.index("click_limit")] == "2"
+    assert capped[header.index("remaining")] == "1"
+    assert capped[header.index("exhausted")] == "False"
+    uncapped = by_url["https://uncapped.example.com"]
+    assert uncapped[header.index("click_limit")] == ""
+    assert uncapped[header.index("remaining")] == ""
+
+
+@pytest.mark.asyncio
 async def test_list_links_sort_by_clicks(client):
     codes = {}
     for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):

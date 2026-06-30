@@ -310,9 +310,11 @@ async def export_links_csv(
     writer.writerow([
         "short_code", "short_url", "original_url", "clicks",
         "created_at", "last_clicked", "expires_at", "expired", "permanent",
+        "forward_query", "click_limit", "remaining", "exhausted",
     ])
     for link in links:
         short_path = link.custom_alias or link.short_code
+        remaining = link_remaining(link)
         writer.writerow([
             link.short_code,
             f"{BASE_URL}/{short_path}",
@@ -323,6 +325,10 @@ async def export_links_csv(
             link.expires_at.isoformat() if link.expires_at else "",
             link_expired(link),
             link.permanent,
+            link.forward_query,
+            link.click_limit if link.click_limit is not None else "",
+            remaining if remaining is not None else "",
+            link_exhausted(link),
         ])
 
     headers = {"Content-Disposition": 'attachment; filename="links.csv"'}
