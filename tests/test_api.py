@@ -1688,7 +1688,8 @@ async def test_summary_empty(client):
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
         "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0, "exhausted": 0,
-        "capped": 0, "avg_clicks": 0.0, "busiest": None, "busiest_clicks": 0, "busiest_share": 0.0,
+        "capped": 0, "remaining_clicks": 0, "avg_clicks": 0.0, "busiest": None,
+        "busiest_clicks": 0, "busiest_share": 0.0,
     }
 
 
@@ -1715,7 +1716,8 @@ async def test_summary_counts(client):
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
         "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5, "exhausted": 0,
-        "capped": 0, "avg_clicks": 2.2, "busiest": "dead0001", "busiest_clicks": 5, "busiest_share": 0.45,
+        "capped": 0, "remaining_clicks": 0, "avg_clicks": 2.2, "busiest": "dead0001",
+        "busiest_clicks": 5, "busiest_share": 0.45,
     }
 
 
@@ -1753,6 +1755,28 @@ async def test_summary_counts_exhausted(client):
     assert res.json()["exhausted"] == 1
     # spent + room both carry a limit; free does not
     assert res.json()["capped"] == 2
+
+
+@pytest.mark.asyncio
+async def test_summary_remaining_clicks(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            # 3 of 5 budget left
+            Link(original_url="https://a.example.com", short_code="aaaa0001",
+                 click_limit=5, clicks=2),
+            # 1 of 10 budget left
+            Link(original_url="https://b.example.com", short_code="bbbb0001",
+                 click_limit=10, clicks=9),
+            # spent -> contributes 0, not a negative
+            Link(original_url="https://c.example.com", short_code="cccc0001",
+                 click_limit=2, clicks=2),
+            # uncapped -> ignored
+            Link(original_url="https://d.example.com", short_code="dddd0001", clicks=40),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/summary")
+    assert res.json()["remaining_clicks"] == 4
 
 
 @pytest.mark.asyncio
