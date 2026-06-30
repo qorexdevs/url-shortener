@@ -1207,6 +1207,22 @@ async def test_list_links_filter_by_expiring(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_fresh(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://new.example.com", short_code="new00001",
+                 created_at=now - timedelta(hours=3)),
+            Link(original_url="https://old.example.com", short_code="old00001",
+                 created_at=now - timedelta(hours=48)),
+        ])
+        await session.commit()
+
+    fresh = await client.get("/api/links?status=fresh")
+    assert [x["original_url"] for x in fresh.json()] == ["https://new.example.com"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_exhausted(client):
     async with db_session_factory() as session:
         session.add_all([

@@ -56,6 +56,10 @@ def _filtered(
             Link.expires_at > now,
             Link.expires_at <= now + timedelta(hours=24),
         )
+    elif status == "fresh":
+        # links made in the last 24h - matches the summary's created_recently count
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        stmt = stmt.where(Link.created_at >= now - timedelta(hours=24))
     elif status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
@@ -95,7 +99,7 @@ SORTS = ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"
 # every status _filtered understands, in the order shown to the client
 STATUSES = (
     "all", "active", "expired", "permanent",
-    "unused", "used", "exhausted", "capped", "expiring",
+    "unused", "used", "exhausted", "capped", "expiring", "fresh",
 )
 
 
