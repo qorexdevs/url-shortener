@@ -73,6 +73,7 @@ class Summary(BaseModel):
     exhausted: int = 0
     capped: int = 0
     remaining_clicks: int = 0
+    dead: int = 0
     avg_clicks: float
     busiest: str | None
     busiest_clicks: int = 0

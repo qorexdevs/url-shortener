@@ -1720,7 +1720,7 @@ async def test_summary_empty(client):
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
         "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0, "exhausted": 0,
-        "capped": 0, "remaining_clicks": 0, "avg_clicks": 0.0, "busiest": None,
+        "capped": 0, "remaining_clicks": 0, "dead": 0, "avg_clicks": 0.0, "busiest": None,
         "busiest_clicks": 0, "busiest_share": 0.0,
     }
 
@@ -1748,7 +1748,7 @@ async def test_summary_counts(client):
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
         "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5, "exhausted": 0,
-        "capped": 0, "remaining_clicks": 0, "avg_clicks": 2.2, "busiest": "dead0001",
+        "capped": 0, "remaining_clicks": 0, "dead": 1, "avg_clicks": 2.2, "busiest": "dead0001",
         "busiest_clicks": 5, "busiest_share": 0.45,
     }
 
@@ -1809,6 +1809,68 @@ async def test_summary_remaining_clicks(client):
 
     res = await client.get("/api/summary")
     assert res.json()["remaining_clicks"] == 4
+
+
+@pytest.mark.asyncio
+async def test_summary_counts_dead(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            # past ttl -> dead
+            Link(original_url="https://gone.example.com", short_code="gone0001",
+                 expires_at=now - timedelta(hours=1)),
+            # spent its cap -> dead
+            Link(original_url="https://spent.example.com", short_code="spnt0010",
+                 click_limit=2, clicks=2),
+            # both expired and spent -> counted once
+            Link(original_url="https://both.example.com", short_code="both0001",
+                 expires_at=now - timedelta(hours=1), click_limit=1, clicks=3),
+            # still redirects -> not dead
+            Link(original_url="https://live.example.com", short_code="live0010", clicks=4),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/summary")
+    assert res.json()["dead"] == 3
+
+
+@pytest.mark.asyncio
+async def test_list_links_filter_by_dead(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://gone.example.com", short_code="gone0002",
+                 expires_at=now - timedelta(hours=1)),
+            Link(original_url="https://spent.example.com", short_code="spnt0011",
+                 click_limit=2, clicks=2),
+            Link(original_url="https://ok.example.com", short_code="okok0001", clicks=1),
+        ])
+        await session.commit()
+
+    dead = await client.get("/api/links?status=dead")
+    urls = {x["original_url"] for x in dead.json()}
+    assert urls == {"https://gone.example.com", "https://spent.example.com"}
+
+
+@pytest.mark.asyncio
+async def test_list_links_filter_by_live(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://gone.example.com", short_code="gone0003",
+                 expires_at=now - timedelta(hours=1)),
+            Link(original_url="https://spent.example.com", short_code="spnt0012",
+                 click_limit=2, clicks=2),
+            # has room and no ttl -> live
+            Link(original_url="https://room.example.com", short_code="room0010",
+                 click_limit=5, clicks=1),
+            Link(original_url="https://plain.example.com", short_code="plan0001", clicks=1),
+        ])
+        await session.commit()
+
+    live = await client.get("/api/links?status=live")
+    urls = {x["original_url"] for x in live.json()}
+    assert urls == {"https://room.example.com", "https://plain.example.com"}
 
 
 @pytest.mark.asyncio

@@ -63,6 +63,14 @@ def _filtered(
         # links made in the last 24h - matches the summary's created_recently count
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         stmt = stmt.where(Link.created_at >= now - timedelta(hours=24))
+    elif status in ("live", "dead"):
+        # dead = a visitor gets a 410, either past its ttl or out of clicks; live
+        # is the complement, still redirecting. mirrors the two gates in redirect
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        expired = Link.expires_at.is_not(None) & (Link.expires_at <= now)
+        spent = Link.click_limit.is_not(None) & (Link.clicks >= Link.click_limit)
+        gone = expired | spent
+        stmt = stmt.where(gone if status == "dead" else ~gone)
     elif status != "all":
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         live = Link.expires_at.is_(None) | (Link.expires_at > now)
@@ -103,6 +111,7 @@ SORTS = ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"
 STATUSES = (
     "all", "active", "expired", "permanent",
     "unused", "used", "exhausted", "capped", "unlimited", "expiring", "fresh",
+    "live", "dead",
 )
 
 
@@ -211,12 +220,19 @@ async def summary_stats(session: AsyncSession) -> dict:
                     ),
                     0,
                 ),
+                # links a visitor can no longer use - past their ttl or out of clicks,
+                # so redirect 410s them. matches status=dead, the union of expired
+                # and exhausted (a link can be both, counted once)
+                func.count().filter(
+                    (expires.is_not(None) & (expires <= now))
+                    | (Link.click_limit.is_not(None) & (Link.clicks >= Link.click_limit))
+                ),
             )
         )
     ).one()
     (
         total, clicks, permanent, expired, unused, custom,
-        expiring_soon, created_recently, exhausted, capped, remaining_clicks,
+        expiring_soon, created_recently, exhausted, capped, remaining_clicks, dead,
     ) = row
     top = (
         await session.execute(
@@ -238,6 +254,7 @@ async def summary_stats(session: AsyncSession) -> dict:
         "exhausted": exhausted,
         "capped": capped,
         "remaining_clicks": remaining_clicks,
+        "dead": dead,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,
         "busiest_clicks": busiest_clicks,
