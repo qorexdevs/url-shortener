@@ -1885,6 +1885,8 @@ async def test_dashboard_page(client):
     assert "text/html" in res.headers["content-type"]
     body = res.text
     assert "Dashboard" in body
+    # the dead-links counter has its own card next to the other stats
+    assert "Dead (410)" in body
     # busiest link gets rendered as a link to its stats page, with its click count
     assert "/stats/busy0001" in body
     assert "busy0001 (9 clicks, 100% of all)" in body
