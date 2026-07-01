@@ -1962,6 +1962,25 @@ async def test_shorten_reuse_ignores_expired_link(client):
 
 
 @pytest.mark.asyncio
+async def test_shorten_reuse_ignores_exhausted_link(client):
+    # a spent capped link would 410 on redirect, so reuse must mint a fresh one
+    async with db_session_factory() as session:
+        session.add(
+            Link(
+                original_url="https://example.com", short_code="spent001",
+                click_limit=1, clicks=1,
+            )
+        )
+        await session.commit()
+
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "reuse": True}
+    )
+    assert res.json()["short_code"] != "spent001"
+    assert res.json()["reused"] is False
+
+
+@pytest.mark.asyncio
 async def test_click_limit_stops_after_cap(client):
     res = await client.post(
         "/api/shorten", json={"url": "https://example.com", "click_limit": 2}
