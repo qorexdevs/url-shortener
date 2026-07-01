@@ -48,6 +48,9 @@ def _filtered(
     elif status == "capped":
         # every link with a click budget, spent or not - the superset of exhausted
         stmt = stmt.where(Link.click_limit.is_not(None))
+    elif status == "unlimited":
+        # links with no click budget - they never 410 from spent clicks, complement of capped
+        stmt = stmt.where(Link.click_limit.is_(None))
     elif status == "expiring":
         # live links whose ttl runs out within 24h - matches the summary's expiring_soon count
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -99,7 +102,7 @@ SORTS = ("created", "clicks", "recent", "stale", "expiring", "code", "remaining"
 # every status _filtered understands, in the order shown to the client
 STATUSES = (
     "all", "active", "expired", "permanent",
-    "unused", "used", "exhausted", "capped", "expiring", "fresh",
+    "unused", "used", "exhausted", "capped", "unlimited", "expiring", "fresh",
 )
 
 

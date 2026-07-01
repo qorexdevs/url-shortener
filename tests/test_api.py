@@ -1260,6 +1260,22 @@ async def test_list_links_filter_by_capped(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_unlimited(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://spent.example.com", short_code="spnt0003",
+                 click_limit=2, clicks=2),
+            Link(original_url="https://free.example.com", short_code="free0003",
+                 clicks=9),
+        ])
+        await session.commit()
+
+    unlimited = await client.get("/api/links?status=unlimited")
+    assert [x["original_url"] for x in unlimited.json()] == ["https://free.example.com"]
+    assert all(x["click_limit"] is None for x in unlimited.json())
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(
