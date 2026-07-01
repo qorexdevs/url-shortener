@@ -254,6 +254,8 @@ async def summary_stats(session: AsyncSession) -> dict:
         "exhausted": exhausted,
         "capped": capped,
         "remaining_clicks": remaining_clicks,
+        # links a visitor can still use - the complement of dead, mirrors status=live
+        "live": total - dead,
         "dead": dead,
         "avg_clicks": round(clicks / total, 2) if total else 0.0,
         "busiest": busiest,

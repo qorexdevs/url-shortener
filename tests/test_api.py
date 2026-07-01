@@ -1720,8 +1720,8 @@ async def test_summary_empty(client):
     assert res.json() == {
         "total_links": 0, "total_clicks": 0, "active": 0, "expired": 0, "permanent": 0,
         "unused": 0, "custom": 0, "expiring_soon": 0, "created_recently": 0, "exhausted": 0,
-        "capped": 0, "remaining_clicks": 0, "dead": 0, "avg_clicks": 0.0, "busiest": None,
-        "busiest_clicks": 0, "busiest_share": 0.0,
+        "capped": 0, "remaining_clicks": 0, "live": 0, "dead": 0, "avg_clicks": 0.0,
+        "busiest": None, "busiest_clicks": 0, "busiest_share": 0.0,
     }
 
 
@@ -1748,8 +1748,8 @@ async def test_summary_counts(client):
     assert res.json() == {
         "total_links": 5, "total_clicks": 11, "active": 3, "expired": 1, "permanent": 1,
         "unused": 1, "custom": 1, "expiring_soon": 1, "created_recently": 5, "exhausted": 0,
-        "capped": 0, "remaining_clicks": 0, "dead": 1, "avg_clicks": 2.2, "busiest": "dead0001",
-        "busiest_clicks": 5, "busiest_share": 0.45,
+        "capped": 0, "remaining_clicks": 0, "live": 4, "dead": 1, "avg_clicks": 2.2,
+        "busiest": "dead0001", "busiest_clicks": 5, "busiest_share": 0.45,
     }
 
 
@@ -1831,7 +1831,10 @@ async def test_summary_counts_dead(client):
         await session.commit()
 
     res = await client.get("/api/summary")
-    assert res.json()["dead"] == 3
+    body = res.json()
+    assert body["dead"] == 3
+    # live is the complement of dead over the four links
+    assert body["live"] == 1
 
 
 @pytest.mark.asyncio
