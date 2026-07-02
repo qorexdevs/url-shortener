@@ -1207,6 +1207,26 @@ async def test_list_links_filter_by_expiring(client):
 
 
 @pytest.mark.asyncio
+async def test_expiring_skips_links_already_out_of_clicks(client):
+    # a capped link with a near ttl but no clicks left already 410s, so it is dead
+    # now, not "act now" - it stays out of both the filter and the summary count
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(original_url="https://live.example.com", short_code="lsoon001",
+                 expires_at=now + timedelta(hours=6), click_limit=5, clicks=1),
+            Link(original_url="https://spent.example.com", short_code="ssoon001",
+                 expires_at=now + timedelta(hours=6), click_limit=2, clicks=2),
+        ])
+        await session.commit()
+
+    expiring = await client.get("/api/links?status=expiring")
+    assert [x["original_url"] for x in expiring.json()] == ["https://live.example.com"]
+    summary = (await client.get("/api/summary")).json()
+    assert summary["expiring_soon"] == 1
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_fresh(client):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     async with db_session_factory() as session:

@@ -52,12 +52,14 @@ def _filtered(
         # links with no click budget - they never 410 from spent clicks, complement of capped
         stmt = stmt.where(Link.click_limit.is_(None))
     elif status == "expiring":
-        # live links whose ttl runs out within 24h - matches the summary's expiring_soon count
+        # live links whose ttl runs out within 24h - matches the summary's expiring_soon
+        # count. a link already out of clicks is dead now, not "act now", so it's dropped
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         stmt = stmt.where(
             Link.expires_at.is_not(None),
             Link.expires_at > now,
             Link.expires_at <= now + timedelta(hours=24),
+            (Link.click_limit.is_(None)) | (Link.clicks < Link.click_limit),
         )
     elif status == "fresh":
         # links made in the last 24h - matches the summary's created_recently count
@@ -197,10 +199,12 @@ async def summary_stats(session: AsyncSession) -> dict:
                 ),
                 func.count().filter(Link.clicks == 0),
                 func.count().filter(Link.custom_alias.is_not(None)),
-                # still live but expiring within a day - the dashboard's "act now" bucket
+                # still live but expiring within a day - the dashboard's "act now" bucket.
+                # a link already out of clicks 410s now, so it's dropped, matching status=expiring
                 func.count().filter(
                     Link.permanent.is_(False), expires.is_not(None),
                     expires > now, expires <= soon,
+                    (Link.click_limit.is_(None)) | (Link.clicks < Link.click_limit),
                 ),
                 # links made in the last day - the counterpart to expiring_soon
                 func.count().filter(Link.created_at >= day_ago),
