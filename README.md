@@ -13,6 +13,12 @@
 
 ---
 
+<p align="center">
+  <img src="assets/home.png" alt="Shorten a URL with a custom alias" width="800">
+  <br>
+  <img src="assets/dashboard.png" alt="Live dashboard with click stats and top links" width="800">
+</p>
+
 ## Features
 
 - Shorten URLs with a single click
