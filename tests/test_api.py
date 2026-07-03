@@ -1296,6 +1296,18 @@ async def test_list_links_filter_by_unlimited(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_filter_by_custom(client):
+    await client.post(
+        "/api/shorten", json={"url": "https://aliased.example.com", "custom_alias": "pick-me"}
+    )
+    await client.post("/api/shorten", json={"url": "https://auto.example.com"})
+
+    custom = await client.get("/api/links?status=custom")
+    assert [x["original_url"] for x in custom.json()] == ["https://aliased.example.com"]
+    assert custom.json()[0]["short_url"].endswith("pick-me")
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_permanent(client):
     await client.post("/api/shorten", json={"url": "https://temp.example.com"})
     await client.post(

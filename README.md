@@ -210,6 +210,7 @@ GET /api/links?status=used        ->  only links with at least one click
 GET /api/links?status=exhausted   ->  only links that spent their click limit and now 410
 GET /api/links?status=capped      ->  only links with a click limit, spent or not
 GET /api/links?status=unlimited   ->  only links with no click limit, the complement of capped
+GET /api/links?status=custom      ->  only links given a custom alias, matching the custom count
 GET /api/links?status=expiring    ->  only live links whose ttl runs out within 24h
 GET /api/links?status=fresh       ->  only links made in the last 24h
 GET /api/links?status=live        ->  only links that still redirect - not expired, not out of clicks
