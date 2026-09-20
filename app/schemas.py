@@ -29,6 +29,7 @@ class BulkShortenItem(BaseModel):
     original_url: str
     short_url: str | None = None
     short_code: str | None = None
+    reused: bool = False
     expires_at: datetime | None = None
     permanent: bool = False
     forward_query: bool = False

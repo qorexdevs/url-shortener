@@ -179,6 +179,7 @@ async def shorten_bulk(
                     original_url=res.original_url,
                     short_url=res.short_url,
                     short_code=res.short_code,
+                    reused=res.reused,
                     expires_at=res.expires_at,
                     permanent=res.permanent,
                     forward_query=res.forward_query,

@@ -1701,6 +1701,21 @@ async def test_bulk_shorten_returns_link_options(client):
 
 
 @pytest.mark.asyncio
+async def test_bulk_shorten_reports_reused_links(client):
+    first = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://example.com", "reuse": True}]},
+    )
+    assert first.json()["results"][0]["reused"] is False
+
+    second = await client.post(
+        "/api/shorten/bulk",
+        json={"urls": [{"url": "https://example.com", "reuse": True}]},
+    )
+    assert second.json()["results"][0]["reused"] is True
+
+
+@pytest.mark.asyncio
 async def test_bulk_shorten_duplicate_alias_in_batch(client):
     res = await client.post(
         "/api/shorten/bulk",
