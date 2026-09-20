@@ -131,7 +131,7 @@ on its own, so a bad one comes back as an error item instead of failing the whol
 ```json
 {
   "results": [
-    {"ok": true, "original_url": "https://example.com", "short_url": "http://localhost:8000/aB3xYz", "short_code": "aB3xYz", "expires_at": null, "permanent": false},
+    {"ok": true, "original_url": "https://example.com", "short_url": "http://localhost:8000/aB3xYz", "short_code": "aB3xYz", "expires_at": null, "permanent": false, "forward_query": false, "click_limit": null},
     {"ok": false, "original_url": "not-a-url", "error": "Invalid URL"}
   ]
 }

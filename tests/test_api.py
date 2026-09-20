@@ -1681,6 +1681,26 @@ async def test_bulk_shorten_keeps_custom_alias(client):
 
 
 @pytest.mark.asyncio
+async def test_bulk_shorten_returns_link_options(client):
+    res = await client.post(
+        "/api/shorten/bulk",
+        json={
+            "urls": [
+                {
+                    "url": "https://x.com",
+                    "forward_query": True,
+                    "click_limit": 3,
+                }
+            ]
+        },
+    )
+
+    item = res.json()["results"][0]
+    assert item["forward_query"] is True
+    assert item["click_limit"] == 3
+
+
+@pytest.mark.asyncio
 async def test_bulk_shorten_duplicate_alias_in_batch(client):
     res = await client.post(
         "/api/shorten/bulk",

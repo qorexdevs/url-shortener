@@ -31,6 +31,8 @@ class BulkShortenItem(BaseModel):
     short_code: str | None = None
     expires_at: datetime | None = None
     permanent: bool = False
+    forward_query: bool = False
+    click_limit: int | None = None
     error: str | None = None
 
 class BulkShortenResponse(BaseModel):

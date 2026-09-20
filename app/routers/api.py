@@ -181,6 +181,8 @@ async def shorten_bulk(
                     short_code=res.short_code,
                     expires_at=res.expires_at,
                     permanent=res.permanent,
+                    forward_query=res.forward_query,
+                    click_limit=res.click_limit,
                 )
             )
         except HTTPException as exc:
