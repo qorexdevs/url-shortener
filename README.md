@@ -283,7 +283,7 @@ PATCH /api/links/{code}
 { "url": "https://example.org/new", "ttl_hours": 24 }
 ```
 
-Updates an existing link in place, keeping its code, alias and click count. Send `url` to point it somewhere new, `ttl_hours` to reset the expiry window from now, or `permanent: true` to drop the expiry and promote a temporary link to a permanent 308. At least one is required, and `ttl_hours` with `permanent: true` together is a 400. The URL is validated and normalized like on shorten, and `ttl_hours` follows the same bounds. Returns the updated stats, 400 on a bad URL, bad ttl or an empty body, 404 if nothing matches.
+Updates an existing link in place, keeping its code, alias and click count. Send `url` to point it somewhere new, `ttl_hours` to reset the expiry window from now, or `permanent: true` to drop the expiry and promote a temporary link to a permanent 308. Send `ttl_hours: null` to remove an expiry without changing the redirect type, or `click_limit: null` to remove a click cap. At least one is required, and `ttl_hours` with `permanent: true` together is a 400. The URL is validated and normalized like on shorten, and `ttl_hours` follows the same bounds. Returns the updated stats, 400 on a bad URL, bad ttl or an empty body, 404 if nothing matches.
 
 ### Delete
 

@@ -1644,6 +1644,32 @@ async def test_retarget_rejects_bad_ttl(client):
 
 
 @pytest.mark.asyncio
+async def test_retarget_can_clear_expiry(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "ttl_hours": 24}
+    )
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"ttl_hours": None})
+    assert res.status_code == 200
+    assert res.json()["expires_at"] is None
+    assert res.json()["permanent"] is False
+
+
+@pytest.mark.asyncio
+async def test_retarget_can_clear_click_limit(client):
+    res = await client.post(
+        "/api/shorten", json={"url": "https://example.com", "click_limit": 1}
+    )
+    code = res.json()["short_code"]
+
+    res = await client.patch(f"/api/links/{code}", json={"click_limit": None})
+    assert res.status_code == 200
+    assert res.json()["click_limit"] is None
+    assert (await client.get(f"/{code}", follow_redirects=False)).status_code == 307
+
+
+@pytest.mark.asyncio
 async def test_bulk_shorten_multiple(client):
     res = await client.post(
         "/api/shorten/bulk",

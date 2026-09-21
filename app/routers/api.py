@@ -436,12 +436,14 @@ async def retarget_link(
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    if (
-        data.url is None
-        and data.ttl_hours is None
-        and data.permanent is None
-        and data.forward_query is None
-        and data.click_limit is None
+    fields = data.model_fields_set
+    if not (
+        data.url is not None
+        or data.ttl_hours is not None
+        or data.permanent is not None
+        or data.forward_query is not None
+        or "ttl_hours" in fields
+        or "click_limit" in fields
     ):
         raise HTTPException(
             status_code=400,
@@ -459,15 +461,18 @@ async def retarget_link(
             raise HTTPException(status_code=400, detail="Invalid URL")
         link.original_url = normalize_url(url)
 
-    if data.ttl_hours is not None:
-        if data.ttl_hours <= 0:
-            raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
-        if data.ttl_hours > MAX_TTL_HOURS:
-            raise HTTPException(
-                status_code=400, detail=f"ttl_hours must be at most {MAX_TTL_HOURS}"
-            )
-        expires = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
-        link.expires_at = expires.replace(tzinfo=None)
+    if "ttl_hours" in fields:
+        if data.ttl_hours is None:
+            link.expires_at = None
+        else:
+            if data.ttl_hours <= 0:
+                raise HTTPException(status_code=400, detail="ttl_hours must be greater than 0")
+            if data.ttl_hours > MAX_TTL_HOURS:
+                raise HTTPException(
+                    status_code=400, detail=f"ttl_hours must be at most {MAX_TTL_HOURS}"
+                )
+            expires = datetime.now(timezone.utc) + timedelta(hours=data.ttl_hours)
+            link.expires_at = expires.replace(tzinfo=None)
 
     if data.permanent is not None:
         link.permanent = data.permanent
@@ -477,8 +482,8 @@ async def retarget_link(
     if data.forward_query is not None:
         link.forward_query = data.forward_query
 
-    if data.click_limit is not None:
-        if data.click_limit <= 0:
+    if "click_limit" in fields:
+        if data.click_limit is not None and data.click_limit <= 0:
             raise HTTPException(status_code=400, detail="click_limit must be greater than 0")
         link.click_limit = data.click_limit
 
