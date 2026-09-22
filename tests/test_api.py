@@ -1420,6 +1420,17 @@ async def test_list_links_filter_by_created_range(client):
 
 
 @pytest.mark.asyncio
+async def test_created_before_date_includes_the_whole_day(client):
+    await client.post("/api/shorten", json={"url": "https://today.example.com"})
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    res = await client.get(f"/api/links?created_before={today}")
+
+    assert res.status_code == 200
+    assert [item["original_url"] for item in res.json()] == ["https://today.example.com"]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_clicked_range(client):
     codes = {}
     for url in ("https://a.example.com", "https://b.example.com", "https://c.example.com"):

@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from io import BytesIO, StringIO
 
 import qrcode
@@ -51,7 +51,7 @@ from app.utils import (
 
 router = APIRouter()
 
-def _parse_created(value: str, field: str) -> datetime | None:
+def _parse_created(value: str, field: str, end_of_day: bool = False) -> datetime | None:
     # accept an ISO date or datetime, store as naive utc to match Link.created_at
     if not value:
         return None
@@ -61,6 +61,8 @@ def _parse_created(value: str, field: str) -> datetime | None:
         raise HTTPException(status_code=400, detail=f"{field} must be an ISO date")
     if dt.tzinfo is not None:
         dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    elif end_of_day and len(value) == 10:
+        dt = datetime.combine(dt.date(), time.max)
     return dt
 
 async def _shorten_one(data: ShortenRequest, session: AsyncSession) -> ShortenResponse:
@@ -225,11 +227,11 @@ async def list_all_links(
     if max_clicks is not None and max_clicks < 0:
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
     after = _parse_created(created_after, "created_after")
-    before = _parse_created(created_before, "created_before")
+    before = _parse_created(created_before, "created_before", end_of_day=True)
     clicked_aft = _parse_created(clicked_after, "clicked_after")
-    clicked_bef = _parse_created(clicked_before, "clicked_before")
+    clicked_bef = _parse_created(clicked_before, "clicked_before", end_of_day=True)
     expires_aft = _parse_created(expires_after, "expires_after")
-    expires_bef = _parse_created(expires_before, "expires_before")
+    expires_bef = _parse_created(expires_before, "expires_before", end_of_day=True)
     if sort not in SORTS:
         raise HTTPException(
             status_code=400,
@@ -298,11 +300,11 @@ async def export_links_csv(
     if max_clicks is not None and max_clicks < 0:
         raise HTTPException(status_code=400, detail="max_clicks must be 0 or greater")
     after = _parse_created(created_after, "created_after")
-    before = _parse_created(created_before, "created_before")
+    before = _parse_created(created_before, "created_before", end_of_day=True)
     clicked_aft = _parse_created(clicked_after, "clicked_after")
-    clicked_bef = _parse_created(clicked_before, "clicked_before")
+    clicked_bef = _parse_created(clicked_before, "clicked_before", end_of_day=True)
     expires_aft = _parse_created(expires_after, "expires_after")
-    expires_bef = _parse_created(expires_before, "expires_before")
+    expires_bef = _parse_created(expires_before, "expires_before", end_of_day=True)
     links = await all_links(
         session, status, q.strip(), min_clicks, max_clicks, after, before,
         clicked_aft, clicked_bef, expires_aft, expires_bef, sort,
