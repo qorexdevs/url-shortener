@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import case, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Link
@@ -136,7 +136,12 @@ def _order_for(sort: str):
     if sort == "remaining":
         # capped links by clicks left, tightest budget first; unlimited links
         # have no cap so they fall to the bottom
-        return (Link.click_limit - Link.clicks).asc().nulls_last()
+        remaining = case(
+            (Link.click_limit.is_(None), None),
+            (Link.clicks >= Link.click_limit, 0),
+            else_=Link.click_limit - Link.clicks,
+        )
+        return remaining.asc().nulls_last()
     return Link.created_at.desc()
 
 async def list_links(

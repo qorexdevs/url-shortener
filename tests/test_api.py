@@ -1129,6 +1129,32 @@ async def test_list_links_sort_by_remaining(client):
 
 
 @pytest.mark.asyncio
+async def test_list_links_sort_by_remaining_clamps_spent_links(client):
+    async with db_session_factory() as session:
+        session.add_all([
+            Link(
+                original_url="https://over.example.com", short_code="over0001",
+                click_limit=5, clicks=7,
+            ),
+            Link(
+                original_url="https://spent.example.com", short_code="spent002",
+                click_limit=5, clicks=5,
+            ),
+        ])
+        await session.commit()
+
+    res = await client.get("/api/links?sort=remaining")
+    assert res.status_code == 200
+    body = res.json()
+    assert [item["remaining"] for item in body] == [0, 0]
+    # both links have no clicks left, so their equal remaining values use id descending.
+    assert [item["original_url"] for item in body] == [
+        "https://spent.example.com",
+        "https://over.example.com",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_list_links_filter_by_status(client):
     await client.post("/api/shorten", json={"url": "https://live.example.com"})
     past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
